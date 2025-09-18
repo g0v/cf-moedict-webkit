@@ -1,10 +1,11 @@
 import { Env, FontConfig, FONT_MAP, WT2FONT, ImageGenerationOptions, LayoutDimensions, CharPosition } from './types';
 import { parseTextFromUrl, fixMojibake, getCORSHeaders } from './index';
+import { Resvg } from '@cf-wasm/resvg';
 
 /**
  * 處理圖片生成請求
  * 對應原本的 @get '/:text.png' 路由
- * 暫時使用簡單的 SVG 生成，後續可以升級到 Satori + resvg
+ * 使用 SVG + resvg 生成 PNG 圖片
  */
 export async function handleImageGeneration(url: URL, env: Env): Promise<Response> {
 	const { text, lang, cleanText } = parseTextFromUrl(url.pathname);
@@ -15,12 +16,29 @@ export async function handleImageGeneration(url: URL, env: Env): Promise<Respons
 		// 限制文字長度
 		const displayText = fixedText.slice(0, 50);
 
-		// 生成簡單的 SVG 圖片
+		// 生成 SVG 圖片
 		const svg = generateSimpleTextSVG(displayText, fontParam);
 
-		return new Response(svg, {
+		// 將 SVG 轉換為 PNG
+		const resvg = new Resvg(svg, {
+			background: '#F9F6F6',
+			fitTo: {
+				mode: 'width',
+				value: 375
+			},
+			font: {
+				loadSystemFonts: true,
+				defaultFontFamily: 'serif, Times, Times New Roman, Arial, sans-serif',
+				fontBuffers: []
+			}
+		});
+
+		const pngData = resvg.render();
+		const pngBuffer = pngData.asPng();
+
+		return new Response(pngBuffer, {
 			headers: {
-				'Content-Type': 'image/svg+xml',
+				'Content-Type': 'image/png',
 				'Cache-Control': 'public, max-age=31536000', // 快取一年
 				...getCORSHeaders(),
 			},
@@ -32,20 +50,36 @@ export async function handleImageGeneration(url: URL, env: Env): Promise<Respons
 		// 返回錯誤圖片
 		const errorSVG = generateErrorSVG('圖片生成失敗');
 
-		return new Response(errorSVG, {
-			status: 500,
-			headers: {
-				'Content-Type': 'image/svg+xml',
-				...getCORSHeaders(),
-			},
-		});
+		// 嘗試將錯誤 SVG 也轉換為 PNG
+		try {
+			const resvg = new Resvg(errorSVG);
+			const pngData = resvg.render();
+			const pngBuffer = pngData.asPng();
+
+			return new Response(pngBuffer, {
+				status: 500,
+				headers: {
+					'Content-Type': 'image/png',
+					...getCORSHeaders(),
+				},
+			});
+		} catch (pngError) {
+			// 如果 PNG 轉換失敗，返回 SVG
+			return new Response(errorSVG, {
+				status: 500,
+				headers: {
+					'Content-Type': 'image/svg+xml',
+					...getCORSHeaders(),
+				},
+			});
+		}
 	}
 }
 
 /**
  * 生成簡單的文字 SVG
  */
-function generateSimpleTextSVG(text: string, font: string): string {
+export function generateSimpleTextSVG(text: string, font: string): string {
 	const { width, height } = calculateLayout(text);
 	const cellSize = 375;
 	const margin = 15;
@@ -55,40 +89,43 @@ function generateSimpleTextSVG(text: string, font: string): string {
 	const svgWidth = width * cellSize;
 	const svgHeight = height * cellSize;
 
-	// 生成九宮格背景
+	// 生成九宮格背景 - 單個字符時居中
 	const gridElements = [];
 	for (let i = 0; i < width * height; i++) {
 		const row = Math.floor(i / width);
 		const col = i % width;
-		const x = margin + col * charWidth;
-		const y = margin + row * cellSize;
+		// 計算九宮格在 SVG 中的居中位置
+		const x = (svgWidth - 355) / 2 + col * charWidth;
+		const y = (svgHeight - 355) / 2 + row * cellSize;
 
 		gridElements.push(`
 			<rect x="${x}" y="${y}" width="355" height="355"
-			      fill="none" stroke="#000" stroke-width="2"/>
-			<line x1="${x}" y1="${y + 118}" x2="${x + 355}" y2="${y + 118}" stroke="#000" stroke-width="2"/>
-			<line x1="${x}" y1="${y + 236}" x2="${x + 355}" y2="${y + 236}" stroke="#000" stroke-width="2"/>
-			<line x1="${x + 118}" y1="${y}" x2="${x + 118}" y2="${y + 355}" stroke="#000" stroke-width="2"/>
-			<line x1="${x + 236}" y1="${y}" x2="${x + 236}" y2="${y + 355}" stroke="#000" stroke-width="2"/>
+			      fill="none" stroke="#A33" stroke-width="4"/>
+			<line x1="${x}" y1="${y + 118}" x2="${x + 355}" y2="${y + 118}" stroke="#A33" stroke-width="2"/>
+			<line x1="${x}" y1="${y + 236}" x2="${x + 355}" y2="${y + 236}" stroke="#A33" stroke-width="2"/>
+			<line x1="${x + 118}" y1="${y}" x2="${x + 118}" y2="${y + 355}" stroke="#A33" stroke-width="2"/>
+			<line x1="${x + 236}" y1="${y}" x2="${x + 236}" y2="${y + 355}" stroke="#A33" stroke-width="2"/>
 		`);
 	}
 
-	// 生成文字元素
+	// 生成文字元素 - 使用 <text> 元素
 	const textElements = [];
 	for (let i = 0; i < text.length && i < width * height; i++) {
 		const char = text[i];
 		const row = Math.floor(i / width);
 		const col = i % width;
-		const { x, y } = calculateCharPosition(char, font, col, row);
+		// 文字位置：讓文字在九宮格的正中央，往上調 30px
+		const x = (svgWidth - 355) / 2 + col * charWidth + (charWidth / 2);
+		const y = (svgHeight - 355) / 2 + row * cellSize + (cellSize / 2) - 30;
 
 		textElements.push(`
-			<text x="${x}" y="${y}" font-size="355" font-family="${getFontFamily(font)}" fill="#000">${char}</text>
+			<text x="${x}" y="${y}" font-size="355" font-family="serif, Times, Times New Roman, Arial, sans-serif" fill="#000" text-anchor="middle" dominant-baseline="central">${char}</text>
 		`);
 	}
 
 	return `<?xml version="1.0" encoding="UTF-8"?>
 <svg width="${svgWidth}" height="${svgHeight}" xmlns="http://www.w3.org/2000/svg">
-	<rect width="${svgWidth}" height="${svgHeight}" fill="#F9F6F6" stroke="#A33" stroke-width="8"/>
+	<rect width="${svgWidth}" height="${svgHeight}" fill="#F9F6F6"/>
 	${gridElements.join('')}
 	${textElements.join('')}
 </svg>`;
@@ -125,14 +162,16 @@ function calculateLayout(text: string): LayoutDimensions {
 
 /**
  * 計算字符位置
+ * 簡化版本，確保文字在九宮格內正確居中
  */
 function calculateCharPosition(char: string, font: string, col: number, row: number): CharPosition {
 	const cellSize = 375;
 	const margin = 15;
 	const charWidth = 360;
 
-	let x = margin + col * charWidth;
-	let y = margin + row * cellSize;
+	// 計算基礎位置 - 九宮格的中心
+	let x = margin + col * charWidth + (charWidth / 2);
+	let y = margin + row * cellSize + (cellSize / 2);
 
 	// 字體特定的位置調整
 	const adjustments = getFontAdjustments(font, char);
@@ -190,18 +229,17 @@ function getFontAdjustments(font: string, char: string): CharPosition {
 
 /**
  * 獲取字體家族名稱
+ * 在 Cloudflare Worker 環境中，使用系統支援的字體
  */
 function getFontFamily(font: string): string {
-	// 檢查是否為王漢宗字體
-	if (WT2FONT[font]) {
-		return WT2FONT[font];
-	}
+	// 使用更通用的字體名稱，確保 Resvg 能夠識別
+	const systemFonts: Record<string, string> = {
+		'kai': 'serif, Times, Times New Roman',
+		'ming': 'serif, Times, Times New Roman',
+		'song': 'serif, Times, Times New Roman',
+		'hei': 'sans-serif, Arial, Helvetica',
+		'default': 'serif, Times, Times New Roman'
+	};
 
-	// 檢查是否為預設字體映射
-	if (FONT_MAP[font]) {
-		return FONT_MAP[font].name;
-	}
-
-	// 預設字體
-	return 'TW-Kai';
+	return systemFonts[font] || systemFonts['default'];
 }
