@@ -9,35 +9,34 @@
 	"compatibility_date": "2025-09-17",
 	"observability": {
 		"enabled": true
-	}
+	},
 	/**
-	 * Smart Placement
-	 * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
+	 * Bindings for CloudFlare services
 	 */
-	// "placement": { "mode": "smart" }
-	/**
-	 * Bindings
-	 * Bindings allow your Worker to interact with resources on the Cloudflare Developer Platform, including
-	 * databases, object storage, AI inference, real-time communication and more.
-	 * https://developers.cloudflare.com/workers/runtime-apis/bindings/
-	 */
+	"kv_namespaces": [
+		{
+			"binding": "DICTIONARY",
+			"id": "your-dictionary-kv-namespace-id",
+			"preview_id": "your-dictionary-kv-preview-namespace-id"
+		}
+	],
+	"r2_buckets": [
+		{
+			"binding": "FONTS",
+			"bucket_name": "moedict-fonts",
+			"preview_bucket_name": "moedict-fonts-preview"
+		},
+		{
+			"binding": "ASSETS",
+			"bucket_name": "moedict-assets",
+			"preview_bucket_name": "moedict-assets-preview"
+		}
+	],
 	/**
 	 * Environment Variables
-	 * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
 	 */
-	// "vars": { "MY_VARIABLE": "production_value" }
-	/**
-	 * Note: Use secrets to store sensitive data.
-	 * https://developers.cloudflare.com/workers/configuration/secrets/
-	 */
-	/**
-	 * Static Assets
-	 * https://developers.cloudflare.com/workers/static-assets/binding/
-	 */
-	// "assets": { "directory": "./public/", "binding": "ASSETS" }
-	/**
-	 * Service Bindings (communicate between multiple Workers)
-	 * https://developers.cloudflare.com/workers/wrangler/configuration/#service-bindings
-	 */
-	// "services": [{ "binding": "MY_SERVICE", "service": "my-service" }]
+	"vars": {
+		"FONT_BASE_URL": "https://your-r2-domain.com/fonts/",
+		"ASSET_BASE_URL": "https://your-r2-domain.com/assets/"
+	}
 }
