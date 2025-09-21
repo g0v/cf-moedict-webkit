@@ -66,30 +66,42 @@ export async function handleImageGeneration(url: URL, env: Env): Promise<Respons
 export function generateSimpleTextSVG(text: string, font: string): string {
 	const { width, height } = calculateLayout(text);
 	const cellSize = 375;
-	const margin = 15;
-	const charWidth = 360;
+	const charWidth = 360; // 九宮格間距
+	const gridSize = 355;  // 九宮格大小
 
-	// 計算 SVG 尺寸
-	const svgWidth = width * cellSize;
-	const svgHeight = height * cellSize;
+	// 計算 SVG 尺寸 - 使用原本的正方形邏輯
+	const svgWidth = width * 375;  // 原本的邏輯：w * 375
+	const svgHeight = width * 375; // 原本的邏輯：w * 375（正方形）
 
-	// 生成九宮格背景 - 單個字符時居中
+	// 計算 padding，讓內容在正方形中垂直居中
+	const padding = (width - height) / 2;
+
+	// 計算 margin，讓左右留白一致（原本的邏輯）
+	const margin = (width * 15) / 2;
+
+	// 生成九宮格背景
 	const gridElements = [];
 	for (let i = 0; i < width * height; i++) {
 		const row = Math.floor(i / width);
 		const col = i % width;
-		// 計算九宮格在 SVG 中的居中位置
-		const x = (svgWidth - 355) / 2 + col * charWidth;
-		const y = (svgHeight - 355) / 2 + row * cellSize;
+		// 計算九宮格位置：使用原本的邏輯，考慮 padding
+		const x = margin + col * charWidth - (i % width) * 10;
+		const y = 10 + (padding + row) * cellSize;
 
-		gridElements.push(`
-			<rect x="${x}" y="${y}" width="355" height="355"
-			      fill="none" stroke="#A33" stroke-width="4"/>
-			<line x1="${x}" y1="${y + 118}" x2="${x + 355}" y2="${y + 118}" stroke="#A33" stroke-width="2"/>
-			<line x1="${x}" y1="${y + 236}" x2="${x + 355}" y2="${y + 236}" stroke="#A33" stroke-width="2"/>
-			<line x1="${x + 118}" y1="${y}" x2="${x + 118}" y2="${y + 355}" stroke="#A33" stroke-width="2"/>
-			<line x1="${x + 236}" y1="${y}" x2="${x + 236}" y2="${y + 355}" stroke="#A33" stroke-width="2"/>
-		`);
+		const char = text[i];
+
+		if (!char || char === ' ') {
+			continue;
+		} else {
+			gridElements.push(`
+				<rect x="${x}" y="${y}" width="${gridSize}" height="${gridSize}"
+					fill="#F9F6F6" stroke="#A33" stroke-width="5"/>
+				<line x1="${x}" y1="${y + 118}" x2="${x + gridSize}" y2="${y + 118}" stroke="#A33" stroke-width="2"/>
+				<line x1="${x}" y1="${y + 236}" x2="${x + gridSize}" y2="${y + 236}" stroke="#A33" stroke-width="2"/>
+				<line x1="${x + 118}" y1="${y}" x2="${x + 118}" y2="${y + gridSize}" stroke="#A33" stroke-width="2"/>
+				<line x1="${x + 236}" y1="${y}" x2="${x + 236}" y2="${y + gridSize}" stroke="#A33" stroke-width="2"/>
+			`);
+		}
 	}
 
 	// 生成文字元素 - 使用 <text> 元素
@@ -98,9 +110,9 @@ export function generateSimpleTextSVG(text: string, font: string): string {
 		const char = text[i];
 		const row = Math.floor(i / width);
 		const col = i % width;
-		// 文字位置：讓文字在九宮格的正中央，往上調 30px
-		const x = (svgWidth - 355) / 2 + col * charWidth + (charWidth / 2);
-		const y = (svgHeight - 355) / 2 + row * cellSize + (cellSize / 2) - 30;
+		// 計算文字位置：使用原本的邏輯，考慮 padding
+		const x = margin + col * charWidth + (charWidth / 2) - (i % width) * 10;
+		const y = 10 + (padding + row) * cellSize + (cellSize / 2) - 30;
 
 		textElements.push(`
 			<text x="${x}" y="${y}" font-size="355" font-family="serif, Times, Times New Roman, Arial, sans-serif" fill="#000" text-anchor="middle" dominant-baseline="central">${char}</text>
@@ -109,7 +121,7 @@ export function generateSimpleTextSVG(text: string, font: string): string {
 
 	return `<?xml version="1.0" encoding="UTF-8"?>
 <svg width="${svgWidth}" height="${svgHeight}" xmlns="http://www.w3.org/2000/svg">
-	<rect width="${svgWidth}" height="${svgHeight}" fill="#F9F6F6"/>
+	<rect width="${svgWidth}" height="${svgHeight}" fill="#F0F0F0"/>
 	${gridElements.join('')}
 	${textElements.join('')}
 </svg>`;
@@ -128,20 +140,25 @@ function generateErrorSVG(message: string): string {
 
 /**
  * 計算佈局尺寸
+ * 複製原本 moedict-webkit 的邏輯
  */
 function calculateLayout(text: string): LayoutDimensions {
 	const len = Math.min(text.length, 50);
-	let width = len;
-	let height = Math.ceil(len / width);
 
+	// 原本的邏輯：4個字符以內排成一行
+	let width = len;
+
+	// 超過4個字符才開始計算換行
 	if (width > 4) {
 		width = Math.ceil(len / Math.sqrt(len * 0.5));
-		height = Math.ceil(len / width);
 	}
 
-	height = Math.min(height, width);
+	const height = Math.ceil(len / width);
 
-	return { width, height, rows: height, cols: width };
+	// 確保高度不超過寬度（原本的邏輯）
+	const finalHeight = Math.min(height, width);
+
+	return { width, height: finalHeight, rows: finalHeight, cols: width };
 }
 
 /**
