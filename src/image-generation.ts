@@ -19,26 +19,10 @@ export async function handleImageGeneration(url: URL, env: Env): Promise<Respons
 		// 生成 SVG 圖片
 		const svg = generateSimpleTextSVG(displayText, fontParam);
 
-		// 將 SVG 轉換為 PNG
-		const resvg = new Resvg(svg, {
-			background: '#F9F6F6',
-			fitTo: {
-				mode: 'width',
-				value: 375
-			},
-			font: {
-				loadSystemFonts: true,
-				defaultFontFamily: 'serif, Times, Times New Roman, Arial, sans-serif',
-				fontBuffers: []
-			}
-		});
-
-		const pngData = resvg.render();
-		const pngBuffer = pngData.asPng();
-
-		return new Response(pngBuffer, {
+		// 暫時先返回 SVG，等字體連上 R2 後再轉換為 PNG
+		return new Response(svg, {
 			headers: {
-				'Content-Type': 'image/png',
+				'Content-Type': 'image/svg+xml',
 				'Cache-Control': 'public, max-age=31536000', // 快取一年
 				...getCORSHeaders(),
 			},
