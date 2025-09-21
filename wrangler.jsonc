@@ -17,8 +17,8 @@
 	"kv_namespaces": [
 		{
 			"binding": "DICTIONARY",
-			"id": "your-dictionary-kv-namespace-id",
-			"preview_id": "your-dictionary-kv-preview-namespace-id"
+			"id": "af7bb87b617c477d9dcf2bdc24940771",
+			"preview_id": "2b39bb4a9195434aa6725d3c4d908f78"
 		}
 	],
 	"r2_buckets": [
@@ -37,7 +37,5 @@
 	 * Environment Variables
 	 */
 	"vars": {
-		"FONT_BASE_URL": "https://your-r2-domain.com/fonts/",
-		"ASSET_BASE_URL": "https://your-r2-domain.com/assets/"
 	}
 }
