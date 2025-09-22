@@ -115,12 +115,25 @@ export function generateSimpleTextSVG(text: string, font: string): string {
 		const y = 10 + (padding + row) * cellSize + (cellSize / 2) - 30;
 
 		textElements.push(`
-			<text x="${x}" y="${y}" font-size="355" font-family="serif, Times, Times New Roman, Arial, sans-serif" fill="#000" text-anchor="middle" dominant-baseline="central">${char}</text>
+			<text x="${x}" y="${y}" dy="0.35em">${char}</text>
 		`);
 	}
 
 	return `<?xml version="1.0" encoding="UTF-8"?>
 <svg width="${svgWidth}" height="${svgHeight}" xmlns="http://www.w3.org/2000/svg">
+	<defs>
+		<style>
+			text {
+				font-family: serif, Times, Times New Roman, Arial, sans-serif;
+				font-size: 355px;
+				fill: #000;
+				text-anchor: middle;
+				/* Safari 特殊處理 */
+				-webkit-font-smoothing: antialiased;
+				-moz-osx-font-smoothing: grayscale;
+			}
+		</style>
+	</defs>
 	<rect width="${svgWidth}" height="${svgHeight}" fill="#F0F0F0"/>
 	${gridElements.join('')}
 	${textElements.join('')}
