@@ -136,7 +136,7 @@ GET /:text
 ### 本地測試
 ```bash
 # 啟動開發伺服器
-npm run dev
+wrangler dev --remote
 
 # 測試不同功能
 curl "http://localhost:8787/萌.json"      # 字典查詢
