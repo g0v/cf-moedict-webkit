@@ -171,8 +171,10 @@ large_fonts/**/*.ttf
 large_fonts/**/*.woff
 large_fonts/**/*.otf
 large_fonts/**/*.woff2
+large_fonts/**/*.svg
 
 large_fonts/*.ttf
 large_fonts/*.woff
 large_fonts/*.otf
 large_fonts/*.woff2
+large_fonts/*.svg
