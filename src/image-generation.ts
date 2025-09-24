@@ -5,7 +5,7 @@ import { Resvg } from '@cf-wasm/resvg';
 /**
  * 處理圖片生成請求
  * 對應原本的 @get '/:text.png' 路由
- * 使用 SVG + resvg 生成 PNG 圖片
+ * 使用 R2 中的 TW-Kai SVG 檔案 + resvg 生成 PNG 圖片
  */
 export async function handleImageGeneration(url: URL, env: Env): Promise<Response> {
 	const { text, lang, cleanText } = parseTextFromUrl(url.pathname);
@@ -16,13 +16,17 @@ export async function handleImageGeneration(url: URL, env: Env): Promise<Respons
 		// 限制文字長度
 		const displayText = fixedText.slice(0, 50);
 
-		// 生成 SVG 圖片
-		const svg = generateSimpleTextSVG(displayText, fontParam);
+		// 生成 SVG 圖片，使用 R2 中的 TW-Kai SVG 檔案
+		const svg = await generateTextSVGWithR2Fonts(displayText, fontParam, env);
 
-		// 暫時先返回 SVG，等字體連上 R2 後再轉換為 PNG
-		return new Response(svg, {
+		// 使用 resvg 將 SVG 轉換為 PNG
+		const resvg = new Resvg(svg);
+		const pngData = resvg.render();
+		const pngBuffer = pngData.asPng();
+
+		return new Response(pngBuffer, {
 			headers: {
-				'Content-Type': 'image/svg+xml',
+				'Content-Type': 'image/png',
 				'Cache-Control': 'public, max-age=31536000', // 快取一年
 				...getCORSHeaders(),
 			},
@@ -61,7 +65,149 @@ export async function handleImageGeneration(url: URL, env: Env): Promise<Respons
 }
 
 /**
- * 生成簡單的文字 SVG
+ * 使用 R2 中的 TW-Kai SVG 檔案生成文字 SVG
+ */
+export async function generateTextSVGWithR2Fonts(text: string, font: string, env: Env): Promise<string> {
+	const { width, height } = calculateLayout(text);
+	const cellSize = 375;
+	const charWidth = 360; // 九宮格間距
+	const gridSize = 355;  // 九宮格大小
+
+	// 計算 SVG 尺寸 - 使用原本的正方形邏輯
+	const svgWidth = width * 375;  // 原本的邏輯：w * 375
+	const svgHeight = width * 375; // 原本的邏輯：w * 375（正方形）
+
+	// 計算 padding，讓內容在正方形中垂直居中
+	const padding = (width - height) / 2;
+
+	// 計算 margin，讓左右留白一致（原本的邏輯）
+	const margin = (width * 15) / 2;
+
+	// 生成九宮格背景
+	const gridElements = [];
+	for (let i = 0; i < width * height; i++) {
+		const row = Math.floor(i / width);
+		const col = i % width;
+		// 計算九宮格位置：使用原本的邏輯，考慮 padding
+		const x = margin + col * charWidth - (i % width) * 10;
+		const y = 10 + (padding + row) * cellSize;
+
+		const char = text[i];
+
+		if (!char || char === ' ') {
+			continue;
+		} else {
+			gridElements.push(`
+				<rect x="${x}" y="${y}" width="${gridSize}" height="${gridSize}"
+					fill="#F9F6F6" stroke="#A33" stroke-width="5"/>
+				<line x1="${x}" y1="${y + 118}" x2="${x + gridSize}" y2="${y + 118}" stroke="#A33" stroke-width="2"/>
+				<line x1="${x}" y1="${y + 236}" x2="${x + gridSize}" y2="${y + 236}" stroke="#A33" stroke-width="2"/>
+				<line x1="${x + 118}" y1="${y}" x2="${x + 118}" y2="${y + gridSize}" stroke="#A33" stroke-width="2"/>
+				<line x1="${x + 236}" y1="${y}" x2="${x + 236}" y2="${y + gridSize}" stroke="#A33" stroke-width="2"/>
+			`);
+		}
+	}
+
+	// 生成文字元素 - 使用 R2 中的 SVG 檔案
+	const textElements = [];
+	console.log(`[DEBUG] Processing text: "${text}", length: ${text.length}`);
+
+	for (let i = 0; i < text.length && i < width * height; i++) {
+		const char = text[i];
+		const row = Math.floor(i / width);
+		const col = i % width;
+
+		// 計算文字位置：使用原本的邏輯，考慮 padding
+		const x = margin + col * charWidth + (charWidth / 2) - (i % width) * 10;
+		const y = 10 + (padding + row) * cellSize + (cellSize / 2);
+
+		// 獲取字符的 Unicode 編碼
+		const unicode = char.codePointAt(0);
+		if (!unicode) {
+			console.log(`[DEBUG] No unicode for character: ${char}`);
+			continue;
+		}
+
+		// 構建 SVG 檔案路徑
+		const svgPath = `TW-Kai/U+${unicode.toString(16).toUpperCase().padStart(4, '0')}.svg`;
+		console.log(`[DEBUG] Character: ${char}, Unicode: U+${unicode.toString(16).toUpperCase()}, SVG Path: ${svgPath}`);
+
+		try {
+			// 從 R2 讀取 SVG 檔案
+			console.log(`[DEBUG] Attempting to fetch SVG from R2: ${svgPath}`);
+			const svgObject = await env.FONTS.get(svgPath);
+
+			if (svgObject) {
+				console.log(`[DEBUG] SVG object found for ${char}, size: ${svgObject.size} bytes`);
+				const svgContent = await svgObject.text();
+				console.log(`[DEBUG] SVG content length: ${svgContent.length} characters`);
+
+				// 解析 SVG 內容，提取 path 元素和 transform
+				const pathMatch = svgContent.match(/<path[^>]*d="([^"]*)"[^>]*>/);
+				const transformMatch = svgContent.match(/<g[^>]*transform="([^"]*)"[^>]*>/);
+
+				if (pathMatch) {
+					const pathData = pathMatch[1];
+					console.log(`[DEBUG] Path data found for ${char}, length: ${pathData.length} characters`);
+
+					// 計算縮放和位置 - 動態計算每個字符的位置
+					const scale = 0.3; // 縮放比例
+
+					// 動態計算位置：根據字符在九宮格中的位置
+					const offsetX = x - (1024 * scale) / 2; // 使用計算出的 x 位置，並調整到九宮格中心
+					const offsetY = y - (1024 * scale) / 2 + 225; // 使用計算出的 y 位置，並往下調整
+
+					console.log(`[DEBUG] Character ${char} position: offsetX=${offsetX}, offsetY=${offsetY}, scale=${scale}`);
+
+					// 簡單的 transform
+					const combinedTransform = `translate(${offsetX}, ${offsetY}) scale(${scale})`;
+
+					textElements.push(`
+						<g transform="${combinedTransform}">
+							<path d="${pathData}" fill="#000"/>
+						</g>
+					`);
+				} else {
+					console.log(`[DEBUG] No path element found in SVG for ${char}`);
+					// 如果找不到 path 元素，使用 fallback 文字
+					textElements.push(`
+						<text x="${x}" y="${y}" dy="0.35em" font-family="serif" font-size="355px" fill="#000" text-anchor="middle">${char}</text>
+					`);
+				}
+			} else {
+				console.log(`[DEBUG] SVG object not found for ${char} at path: ${svgPath}`);
+				// 如果找不到 SVG 檔案，使用 fallback 文字
+				textElements.push(`
+					<text x="${x}" y="${y}" dy="0.35em" font-family="serif" font-size="355px" fill="#000" text-anchor="middle">${char}</text>
+				`);
+			}
+		} catch (error) {
+			console.error(`[DEBUG] Error loading SVG for character ${char} (U+${unicode.toString(16)}):`, error);
+			// 使用 fallback 文字
+			textElements.push(`
+				<text x="${x}" y="${y}" dy="0.35em" font-family="serif" font-size="355px" fill="#000" text-anchor="middle">${char}</text>
+			`);
+		}
+	}
+
+	console.log(`[DEBUG] Total text elements generated: ${textElements.length}`);
+
+	const finalSVG = `<?xml version="1.0" encoding="UTF-8"?>
+<svg width="${svgWidth}" height="${svgHeight}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgWidth} ${svgHeight}">
+	<rect width="${svgWidth}" height="${svgHeight}" fill="#F0F0F0"/>
+	${gridElements.join('')}
+	${textElements.join('')}
+</svg>`;
+
+	console.log(`[DEBUG] Final SVG generated, grid elements: ${gridElements.length}, text elements: ${textElements.length}`);
+	console.log(`[DEBUG] SVG dimensions: ${svgWidth}x${svgHeight}`);
+	console.log(`[DEBUG] Text element content: ${textElements[0] || 'No text elements'}`);
+
+	return finalSVG;
+}
+
+/**
+ * 生成簡單的文字 SVG（保留作為 fallback）
  */
 export function generateSimpleTextSVG(text: string, font: string): string {
 	const { width, height } = calculateLayout(text);

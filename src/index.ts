@@ -1,6 +1,6 @@
 import { Env, DictionaryLang, DictionaryAPIResponse, ErrorResponse } from './types';
 import { handleDictionaryAPI } from './dictionary';
-import { handleImageGeneration, generateSimpleTextSVG } from './image-generation';
+import { handleImageGeneration, generateTextSVGWithR2Fonts } from './image-generation';
 import { handlePageRequest } from './page-rendering';
 import { handleStaticAssets } from './static-assets';
 import { Resvg } from '@cf-wasm/resvg';
@@ -16,7 +16,7 @@ export default {
 		try {
 			// 測試路由 - 字圖生成 prototype
 			if (url.pathname === '/test/prototype.png') {
-				return await handlePrototypeImageGeneration();
+				return await handlePrototypeImageGeneration(env);
 			}
 
 			// 路由處理
@@ -134,19 +134,23 @@ export function handleOptionsRequest(): Response {
  * 處理 prototype 測試請求
  * 生成單個"萌"字的字圖
  */
-export async function handlePrototypeImageGeneration(): Promise<Response> {
+export async function handlePrototypeImageGeneration(env: Env): Promise<Response> {
 	try {
-		// 固定生成"萌"字
-		const text = '萌';
+		// 測試兩個字符
+		const text = '萌典';
 		const font = 'kai';
 
-		// 使用現有的 generateSimpleTextSVG 函數
-		const svg = generateSimpleTextSVG(text, font);
+		// 使用新的 R2 SVG 功能
+		const svg = await generateTextSVGWithR2Fonts(text, font, env);
 
-		// 先測試 SVG 版本，看看 <text> 元素是否正確生成
-		return new Response(svg, {
+		// 使用 resvg 將 SVG 轉換為 PNG
+		const resvg = new Resvg(svg);
+		const pngData = resvg.render();
+		const pngBuffer = pngData.asPng();
+
+		return new Response(pngBuffer, {
 			headers: {
-				'Content-Type': 'image/svg+xml',
+				'Content-Type': 'image/png',
 				'Cache-Control': 'public, max-age=31536000', // 快取一年
 				...getCORSHeaders(),
 			},
