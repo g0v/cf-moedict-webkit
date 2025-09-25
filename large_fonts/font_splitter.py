@@ -10,7 +10,7 @@ with open("../word_list/word_list.json", "r", encoding="utf-8") as f:
 
 print(f"載入了 {len(moedict_words)} 個萌典單字")
 
-font = TTFont("TW-Kai.ttf")
+font = TTFont("TW-Sung-98_1.ttf")
 glyph_set = font.getGlyphSet()
 cmap = {cp:gn for table in font["cmap"].tables for cp,gn in table.cmap.items()}
 
@@ -18,7 +18,7 @@ UPM = font["head"].unitsPerEm
 ASC = font["hhea"].ascent
 
 # Output folder 設定
-output_folder = "TW-Kai"
+output_folder = "TW-Sung"
 os.makedirs(output_folder, exist_ok=True)
 
 # 只處理萌典中有的字
