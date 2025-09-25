@@ -2,11 +2,11 @@
 export interface Env {
   // KV Storage 用於字典資料
   DICTIONARY: KVNamespace;
-  
+
   // R2 Storage 用於字體檔案和靜態資源
   FONTS: R2Bucket;
   ASSETS: R2Bucket;
-  
+
   // 環境變數
   FONT_BASE_URL?: string;
   ASSET_BASE_URL?: string;
@@ -96,6 +96,7 @@ export const FONT_MAP: Record<string, FontConfig> = {
   'gwmm': { name: 'GenWanMin TW M', displayName: '正明', category: '源雲明體' },
   'gwmsb': { name: 'GenWanMin TW SB', displayName: '中明', category: '源雲明體' },
   'openhuninn': { name: 'jf-openhuninn-1.1', displayName: 'Open 粉圓', category: 'Justfont' },
+  'rxkt': { name: 'Typography', displayName: '特殊字體', category: '其他' },
 };
 
 // 王漢宗字體映射

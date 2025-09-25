@@ -1,11 +1,11 @@
-import { Env, FontConfig, FONT_MAP, WT2FONT, ImageGenerationOptions, LayoutDimensions, CharPosition } from './types';
+import { Env, FontConfig, FONT_MAP, WT2FONT, FONT2NAME, ImageGenerationOptions, LayoutDimensions, CharPosition } from './types';
 import { parseTextFromUrl, fixMojibake, getCORSHeaders } from './index';
 import { Resvg } from '@cf-wasm/resvg';
 
 /**
  * 處理圖片生成請求
  * 對應原本的 @get '/:text.png' 路由
- * 使用 R2 中的 TW-Kai SVG 檔案 + resvg 生成 PNG 圖片
+ * 使用 R2 中的字體 SVG 檔案 + resvg 生成 PNG 圖片
  */
 export async function handleImageGeneration(url: URL, env: Env): Promise<Response> {
 	const { text, lang, cleanText } = parseTextFromUrl(url.pathname);
@@ -16,7 +16,25 @@ export async function handleImageGeneration(url: URL, env: Env): Promise<Respons
 		// 限制文字長度
 		const displayText = fixedText.slice(0, 50);
 
-		// 生成 SVG 圖片，使用 R2 中的 TW-Kai SVG 檔案
+		// 檢查字體是否在 R2 中可用
+		const fontName = getFontName(fontParam);
+		const isFontAvailable = await checkFontAvailability(fontName, env);
+
+		if (!isFontAvailable) {
+			// 如果字體不可用，返回純文字錯誤說明
+			const errorMessage = `目前R2中尚無${fontName}字體，待更新`;
+
+			return new Response(errorMessage, {
+				status: 404,
+				headers: {
+					'Content-Type': 'text/plain; charset=utf-8',
+					'Cache-Control': 'public, max-age=3600', // 快取一小時
+					...getCORSHeaders(),
+				},
+			});
+		}
+
+		// 生成 SVG 圖片，使用 R2 中的字體 SVG 檔案
 		const svg = await generateTextSVGWithR2Fonts(displayText, fontParam, env);
 
 		// 使用 resvg 將 SVG 轉換為 PNG
@@ -65,7 +83,84 @@ export async function handleImageGeneration(url: URL, env: Env): Promise<Respons
 }
 
 /**
- * 使用 R2 中的 TW-Kai SVG 檔案生成文字 SVG
+ * 根據字體參數獲取字體名稱
+ * 複製原本 moedict-webkit 的 font-of 函數邏輯
+ */
+function getFontName(fontParam: string): string {
+	// 全字庫字體
+	if (/sung/i.test(fontParam)) return 'TW-Sung';
+	if (/ebas/i.test(fontParam)) return 'EBAS';
+	if (/shuowen/i.test(fontParam)) return 'ShuoWen';
+
+	// cwTeX Q 字體
+	if (/cwming/i.test(fontParam)) return 'cwTeXQMing';
+	if (/cwhei/i.test(fontParam)) return 'cwTeXQHei';
+	if (/cwyuan/i.test(fontParam)) return 'cwTeXQYuan';
+	if (/cwkai/i.test(fontParam)) return 'cwTeXQKai';
+	if (/cwfangsong/i.test(fontParam)) return 'cwTeXQFangsong';
+
+	// 思源黑體
+	if (/srcx/i.test(fontParam)) return 'SourceHanSansTCExtraLight';
+	if (/srcl/i.test(fontParam)) return 'SourceHanSansTCLight';
+	if (/srcn/i.test(fontParam)) return 'SourceHanSansTCNormal';
+	if (/srcr/i.test(fontParam)) return 'SourceHanSansTCRegular';
+	if (/srcm/i.test(fontParam)) return 'SourceHanSansTCMedium';
+	if (/srcb/i.test(fontParam)) return 'SourceHanSansTCBold';
+	if (/srch/i.test(fontParam)) return 'SourceHanSansTCHeavy';
+
+	// 思源宋體
+	if (/shsx/i.test(fontParam)) return 'SourceHanSerifTCExtraLight';
+	if (/shsl/i.test(fontParam)) return 'SourceHanSerifTCLight';
+	if (/shsm/i.test(fontParam)) return 'SourceHanSerifTCMedium';
+	if (/shsr/i.test(fontParam)) return 'SourceHanSerifTCRegular';
+	if (/shss/i.test(fontParam)) return 'SourceHanSerifTCSemiBold';
+	if (/shsb/i.test(fontParam)) return 'SourceHanSerifTCBold';
+	if (/shsh/i.test(fontParam)) return 'SourceHanSerifTCHeavy';
+
+	// 源雲明體
+	if (/gwmel/i.test(fontParam)) return 'GenWanMin TW EL';
+	if (/gwml/i.test(fontParam)) return 'GenWanMin TW L';
+	if (/gwmr/i.test(fontParam)) return 'GenWanMin TW R';
+	if (/gwmm/i.test(fontParam)) return 'GenWanMin TW M';
+	if (/gwmsb/i.test(fontParam)) return 'GenWanMin TW SB';
+
+	// 其他
+	if (/rxkt/i.test(fontParam)) return 'Typography';
+	if (/openhuninn/i.test(fontParam)) return 'jf-openhuninn-1.1';
+
+	// 王漢宗字體
+	if (WT2FONT[fontParam]) return WT2FONT[fontParam];
+
+	// 預設字體
+	return 'TW-Kai';
+}
+
+/**
+ * 檢查字體是否在 R2 中可用
+ * 通過檢查一個測試字符的 SVG 檔案是否存在
+ */
+async function checkFontAvailability(fontName: string, env: Env): Promise<boolean> {
+	try {
+		// 使用 "萌" 字 (U+840C) 作為測試字符
+		const testUnicode = 0x840C;
+		const svgPath = `${fontName}/U+${testUnicode.toString(16).toUpperCase().padStart(4, '0')}.svg`;
+
+		console.log(`[DEBUG] Checking font availability: ${fontName}, test path: ${svgPath}`);
+
+		const svgObject = await env.FONTS.get(svgPath);
+		const isAvailable = svgObject !== null;
+
+		console.log(`[DEBUG] Font ${fontName} availability: ${isAvailable}`);
+		return isAvailable;
+	} catch (error) {
+		console.error(`[DEBUG] Error checking font availability for ${fontName}:`, error);
+		return false;
+	}
+}
+
+
+/**
+ * 使用 R2 中的字體 SVG 檔案生成文字 SVG
  */
 export async function generateTextSVGWithR2Fonts(text: string, font: string, env: Env): Promise<string> {
 	const { width, height } = calculateLayout(text);
@@ -128,9 +223,12 @@ export async function generateTextSVGWithR2Fonts(text: string, font: string, env
 			continue;
 		}
 
+		// 獲取字體名稱
+		const fontName = getFontName(font);
+
 		// 構建 SVG 檔案路徑
-		const svgPath = `TW-Kai/U+${unicode.toString(16).toUpperCase().padStart(4, '0')}.svg`;
-		console.log(`[DEBUG] Character: ${char}, Unicode: U+${unicode.toString(16).toUpperCase()}, SVG Path: ${svgPath}`);
+		const svgPath = `${fontName}/U+${unicode.toString(16).toUpperCase().padStart(4, '0')}.svg`;
+		console.log(`[DEBUG] Character: ${char}, Unicode: U+${unicode.toString(16).toUpperCase()}, Font: ${fontName}, SVG Path: ${svgPath}`);
 
 		try {
 			// 從 R2 讀取 SVG 檔案
