@@ -248,18 +248,30 @@ export async function generateTextSVGWithR2Fonts(text: string, font: string, env
 					const pathData = pathMatch[1];
 					console.log(`[DEBUG] Path data found for ${char}, length: ${pathData.length} characters`);
 
-					// 計算縮放和位置 - 動態計算每個字符的位置
-					const scale = 0.3; // 縮放比例
+					// 動態計算縮放比例 - 根據字體類型調整
+					let scale = 0.3; // 預設縮放比例（楷體、宋體等）
+
+					// 篆體字需要較小的縮放比例，因為其 SVG 尺寸較大
+					// 楷體 SVG: 1024x1024, 篆體 SVG: 4096x4096 (4倍)
+					// 楷體縮放 0.3，篆體應該縮放 0.3/4 = 0.075
+					if (fontName.includes('EBAS')) {
+						scale = 0.075; // 篆體使用較小的縮放比例，基於尺寸比例計算
+						console.log(`[DEBUG] Using EBAS (seal script) scale: ${scale}`);
+					}
 
 					// 半形字（ASCII 可顯示範圍）在視覺上偏窄，向右再位移一些以達到置中視覺
 					const isHalfWidth = /[\x20-\x7E]/.test(char);
 					const halfWidthAdjustX = isHalfWidth ? 75 : 0; // 約半個半形字寬的視覺調整
 
-					// 動態計算位置：根據字符在九宮格中的位置
-					const offsetX = (x + halfWidthAdjustX) - (1024 * scale) / 2; // 使用計算出的 x 位置，並調整到九宮格中心
-					const offsetY = y - (1024 * scale) / 2 + 225; // 使用計算出的 y 位置，並往下調整
+					// 動態計算位置：根據字符在九宮格中的位置，依 scale 調整
+					// 基準縮放比例為 0.3，其他縮放比例按比例調整偏移量
+					const baseScale = 0.3;
+					const scaleRatio = scale / baseScale;
 
-					console.log(`[DEBUG] Character ${char} position: isHalfWidth=${isHalfWidth}, adjustX=${halfWidthAdjustX}, offsetX=${offsetX}, offsetY=${offsetY}, scale=${scale}`);
+					const offsetX = (x + halfWidthAdjustX) - (1024 * scale) / 2 - 180 * ( 1 - scaleRatio ); // X 位置依 scale 比例調整
+					const offsetY = y - (1024 * scale) / 2 -  (150 * (1 - scaleRatio )) + 225; // Y 位置依 scale 比例調整
+
+					console.log(`[DEBUG] Character ${char} position: font=${fontName}, isHalfWidth=${isHalfWidth}, adjustX=${halfWidthAdjustX}, offsetX=${offsetX}, offsetY=${offsetY}, scale=${scale}`);
 
 					// 簡單的 transform
 					const combinedTransform = `translate(${offsetX}, ${offsetY}) scale(${scale})`;
