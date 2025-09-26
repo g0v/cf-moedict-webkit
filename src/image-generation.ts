@@ -251,11 +251,15 @@ export async function generateTextSVGWithR2Fonts(text: string, font: string, env
 					// 計算縮放和位置 - 動態計算每個字符的位置
 					const scale = 0.3; // 縮放比例
 
+					// 半形字（ASCII 可顯示範圍）在視覺上偏窄，向右再位移一些以達到置中視覺
+					const isHalfWidth = /[\x20-\x7E]/.test(char);
+					const halfWidthAdjustX = isHalfWidth ? 75 : 0; // 約半個半形字寬的視覺調整
+
 					// 動態計算位置：根據字符在九宮格中的位置
-					const offsetX = x - (1024 * scale) / 2; // 使用計算出的 x 位置，並調整到九宮格中心
+					const offsetX = (x + halfWidthAdjustX) - (1024 * scale) / 2; // 使用計算出的 x 位置，並調整到九宮格中心
 					const offsetY = y - (1024 * scale) / 2 + 225; // 使用計算出的 y 位置，並往下調整
 
-					console.log(`[DEBUG] Character ${char} position: offsetX=${offsetX}, offsetY=${offsetY}, scale=${scale}`);
+					console.log(`[DEBUG] Character ${char} position: isHalfWidth=${isHalfWidth}, adjustX=${halfWidthAdjustX}, offsetX=${offsetX}, offsetY=${offsetY}, scale=${scale}`);
 
 					// 簡單的 transform
 					const combinedTransform = `translate(${offsetX}, ${offsetY}) scale(${scale})`;
