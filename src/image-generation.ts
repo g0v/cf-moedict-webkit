@@ -254,9 +254,9 @@ export async function generateTextSVGWithR2Fonts(text: string, font: string, env
 
 					// 篆體字需要較小的縮放比例，因為其 SVG 尺寸較大
 					// 楷體 SVG: 1024x1024, 篆體 SVG: 4096x4096 (4倍)
-					// 楷體縮放 initRatio，篆體應該縮放initRatio * 0.3/4 =  initRatio * 0.075
+					// 楷體縮放 initRatio，篆體應該縮放initRatio * / 4 =  initRatio / 4
 					if (fontName.includes('EBAS')) {
-						scale = initRatio * 0.075; // 篆體使用較小的縮放比例，基於尺寸比例計算
+						scale = initRatio / 4; // 篆體使用較小的縮放比例，基於尺寸比例計算
 						console.log(`[DEBUG] Using EBAS (seal script) scale: ${scale}`);
 					}
 
@@ -270,7 +270,7 @@ export async function generateTextSVGWithR2Fonts(text: string, font: string, env
 					const scaleRatio = scale / baseScale;
 
 					const offsetX = (x + halfWidthAdjustX) - (1024 * scale) / 2 - 180 * ( 1 - scaleRatio ); // X 位置依 scale 比例調整
-					const offsetY = y - (1024 * scale) / 2 -  (150 * (1 - scaleRatio )) + 280; // Y 位置依 scale 比例調整
+					const offsetY = y - (1024 * scale) / 2 -  (180 * (1 - scaleRatio )) + 280; // Y 位置依 scale 比例調整
 
 					console.log(`[DEBUG] Character ${char} position: font=${fontName}, isHalfWidth=${isHalfWidth}, adjustX=${halfWidthAdjustX}, offsetX=${offsetX}, offsetY=${offsetY}, scale=${scale}`);
 
