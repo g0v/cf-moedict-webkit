@@ -136,13 +136,17 @@ GET /:text
 ### 本地測試
 ```bash
 # 啟動開發伺服器
-wrangler dev --remote
+npx wrangler dev --remote
 
 # 測試不同功能
 curl "http://localhost:8787/萌.json"      # 字典查詢
 curl "http://localhost:8787/萌.png"        # 圖片生成
 curl "http://localhost:8787/萌"            # 頁面渲染
 ```
+
+### 部置
+
+``` npx wrangler deploy ```
 
 ### 除錯
 ```bash
