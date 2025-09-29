@@ -87,9 +87,25 @@ for variant_name, weight_value in source_han_serif_variants.items():
         pen = TransformPen(spen, (1,0,0,-1,0,0))   # flip Y for SVG
         glyph_set[gname].draw(pen)
         d = spen.getCommands()
-        # 調整座標轉換，將字體正確放置在視窗內
-        # 使用 UPM 作為高度，並將字體置中
-        svg = f'<svg xmlns="http://www.w3.org/2000/svg" width="{UPM}" height="{UPM}" viewBox="0 0 {UPM} {UPM}"><g transform="translate(0,{UPM + UPM + UPM + UPM - ASC - ASC - ASC - DESC})"><path d="{d}"/></g></svg>'
+
+        # 字體座標系統：
+        # - 原點在基線 (baseline)
+        # - ASC 是基線向上到頂部的距離
+        # - DESC 是基線向下到底部的距離（通常為負值）
+        # - TransformPen 已經翻轉 Y 軸
+        #
+        # 目標：將字形置於 viewBox="0 0 {UPM} {UPM}" 的正方形內
+        # 策略：計算字形總高度，然後將基線放在合適的位置
+
+        total_height = ASC - DESC  # DESC 是負值，所以相減得到總高度
+        scale = UPM / total_height  # 縮放比例，讓字形適應 UPM
+
+        # 將基線放在距離頂部 ASC * scale 的位置
+        # 但因為我們使用 UPM 作為 viewBox，需要調整
+        # 簡化：直接使用與楷體相同的邏輯，但限制在 UPM 範圍內
+        y_offset = UPM * ASC / total_height
+
+        svg = f'<svg xmlns="http://www.w3.org/2000/svg" width="{UPM}" height="{UPM}" viewBox="0 0 {UPM} {UPM}"><g transform="translate(0,{y_offset})"><path d="{d}"/></g></svg>'
         with open(os.path.join(output_folder, f"U+{cp:04X}.svg"), "w", encoding="utf-8") as f: f.write(svg)
         processed_count += 1
         if processed_count % 100 == 0:
