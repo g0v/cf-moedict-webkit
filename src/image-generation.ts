@@ -250,15 +250,24 @@ export async function generateTextSVGWithR2Fonts(text: string, font: string, env
 
 					const initRatio = 360 / 1024;
 					// 動態計算縮放比例 - 根據字體類型調整
-					let scale = initRatio; // 預設縮放比例（楷體、宋體等）
+					let scale = initRatio; // 預設縮放比例（楷體等，1024x1024）
 
 					// 篆體字需要較小的縮放比例，因為其 SVG 尺寸較大
 					// 楷體 SVG: 1024x1024, 篆體 SVG: 4096x4096 (4倍)
-					// 楷體縮放 initRatio，篆體應該縮放initRatio * / 4 =  initRatio / 4
+					// 楷體縮放 initRatio，篆體應該縮放 initRatio / 4
 					if (fontName.includes('EBAS')) {
 						scale = initRatio / 4; // 篆體使用較小的縮放比例，基於尺寸比例計算
 						console.log(`[DEBUG] Using EBAS (seal script) scale: ${scale}`);
 					}
+
+					// 思源宋體的 SVG 尺寸為 1000x1000
+					// 所有7個字重：ExtraLight, Light, Regular, Medium, SemiBold, Bold, Heavy
+					if (fontName.includes('SourceHanSerif')) {
+						scale = initRatio * 1024 / 1000; // 思源宋體使用 1000x1000 的縮放比例
+						console.log(`[DEBUG] Using SourceHanSerif scale: ${scale}`);
+					}
+
+
 
 					// 半形字（ASCII 可顯示範圍）在視覺上偏窄，向右再位移一些以達到置中視覺
 					const isHalfWidth = /[\x20-\x7E]/.test(char);
@@ -269,7 +278,14 @@ export async function generateTextSVGWithR2Fonts(text: string, font: string, env
 					const baseScale = initRatio;
 					const scaleRatio = scale / baseScale;
 
-					const offsetX = (x + halfWidthAdjustX) - (1024 * scale) / 2 - 180 * ( 1 - scaleRatio ); // X 位置依 scale 比例調整
+					let offsetX = (x + halfWidthAdjustX) - (1024 * scale) / 2 - 180 * ( 1 - scaleRatio ); // X 位置依 scale 比例調整
+					// 思源宋體的X偏移量要再多50px
+					if (fontName.includes('SourceHanSerif')) {
+						offsetX += 50;
+						console.log(`[DEBUG] Using SourceHanSerif offsetX: ${offsetX}`);
+					}
+
+
 					const offsetY = y - (1024 * scale) / 2 -  (180 * (1 - scaleRatio )) + 280; // Y 位置依 scale 比例調整
 
 					console.log(`[DEBUG] Character ${char} position: font=${fontName}, isHalfWidth=${isHalfWidth}, adjustX=${halfWidthAdjustX}, offsetX=${offsetX}, offsetY=${offsetY}, scale=${scale}`);
