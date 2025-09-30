@@ -276,7 +276,15 @@ export async function generateTextSVGWithR2Fonts(text: string, font: string, env
 
 					// 半形字（ASCII 可顯示範圍）在視覺上偏窄，向右再位移一些以達到置中視覺
 					const isHalfWidth = /[\x20-\x7E]/.test(char);
-					const halfWidthAdjustX = isHalfWidth ? 85 : 0; // 約半個半形字寬的視覺調整
+					let halfWidthAdjustX = isHalfWidth ? 85 : 0; // 約半個半形字寬的視覺調整
+
+
+					// 源雲明體的半形字寬度調整要再減30px
+					if (fontName.includes('GenWanMin')) {
+						halfWidthAdjustX = isHalfWidth ? 55 : 0;
+						console.log(`[DEBUG] Using GenWanMin halfWidthAdjustX: ${halfWidthAdjustX}`);
+					}
+
 
 					// 動態計算位置：根據字符在九宮格中的位置，依 scale 調整
 					// 基準縮放比例為 initRatio，其他縮放比例按比例調整偏移量
@@ -293,6 +301,11 @@ export async function generateTextSVGWithR2Fonts(text: string, font: string, env
 					else if (fontName.includes('SourceHanSans')) {
 						offsetX += 50;
 						console.log(`[DEBUG] Using SourceHanSans offsetX: ${offsetX}`);
+					}
+					// 源雲明體的X偏移量也要多50px
+					else if (fontName.includes('GenWanMin')) {
+						offsetX += 50;
+						console.log(`[DEBUG] Using GenWanMin offsetX: ${offsetX}`);
 					}
 
 
