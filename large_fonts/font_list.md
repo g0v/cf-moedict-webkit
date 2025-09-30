@@ -6,11 +6,11 @@
 - `ebas` → EBAS (篆文)
 
 ### 源雲明體 (5個)
-- `gwmel` → GenWanMin TW EL (特細)
-- `gwml` → GenWanMin TW L (細體)
-- `gwmr` → GenWanMin TW R (標準)
-- `gwmm` → GenWanMin TW M (正明)
-- `gwmsb` → GenWanMin TW SB (中明)
+- `gwmel` → GenWanMinTWEL (特細)
+- `gwml` → GenWanMinTWL (細體)
+- `gwmr` → GenWanMinTWR (標準)
+- `gwmm` → GenWanMinTWM (正明)
+- `gwmsb` → GenWanMinTWSB (中明)
 
 ### Justfont (1個)
 - `openhuninn` → jf-openhuninn-1.1 (Open 粉圓)

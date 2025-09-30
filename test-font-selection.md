@@ -22,11 +22,11 @@
 - `/萌.png?font=ebas` → EBAS (篆文)
 
 #### 源雲明體
-- `/萌.png?font=gwmel` → GenWanMin TW EL (特細)
-- `/萌.png?font=gwml` → GenWanMin TW L (細體)
-- `/萌.png?font=gwmr` → GenWanMin TW R (標準)
-- `/萌.png?font=gwmm` → GenWanMin TW M (正明)
-- `/萌.png?font=gwmsb` → GenWanMin TW SB (中明)
+- `/萌.png?font=gwmel` → GenWanMinTWEL (特細)
+- `/萌.png?font=gwml` → GenWanMinTWL (細體)
+- `/萌.png?font=gwmr` → GenWanMinTWR (標準)
+- `/萌.png?font=gwmm` → GenWanMinTWM (正明)
+- `/萌.png?font=gwmsb` → GenWanMinTWSB (中明)
 
 #### Justfont
 - `/萌.png?font=openhuninn` → jf-openhuninn-1.1 (Open 粉圓)

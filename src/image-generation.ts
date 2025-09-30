@@ -118,11 +118,11 @@ function getFontName(fontParam: string): string {
 	if (/shsh/i.test(fontParam)) return 'SourceHanSerifTCHeavy';
 
 	// 源雲明體
-	if (/gwmel/i.test(fontParam)) return 'GenWanMin TW EL';
-	if (/gwml/i.test(fontParam)) return 'GenWanMin TW L';
-	if (/gwmr/i.test(fontParam)) return 'GenWanMin TW R';
-	if (/gwmm/i.test(fontParam)) return 'GenWanMin TW M';
-	if (/gwmsb/i.test(fontParam)) return 'GenWanMin TW SB';
+	if (/gwmel/i.test(fontParam)) return 'GenWanMinTWEL';
+	if (/gwml/i.test(fontParam)) return 'GenWanMinTWL';
+	if (/gwmr/i.test(fontParam)) return 'GenWanMinTWR';
+	if (/gwmm/i.test(fontParam)) return 'GenWanMinTWM';
+	if (/gwmsb/i.test(fontParam)) return 'GenWanMinTWSB';
 
 	// 其他
 	if (/rxkt/i.test(fontParam)) return 'Typography';
