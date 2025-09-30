@@ -23,7 +23,7 @@
 - `gwmsb` → `GenWanMinTWSB` (中明)
 
 #### Justfont
-- `openhuninn` → `jf-openhuninn-1.1` (Open 粉圓)
+- `openhuninn` → `jf-openhuninn-2.1` (Open 粉圓)
 
 #### 逢甲大學
 - `shuowen` → `ShuoWen` (說文標篆)

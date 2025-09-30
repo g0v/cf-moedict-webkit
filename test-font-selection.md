@@ -29,7 +29,7 @@
 - `/萌.png?font=gwmsb` → GenWanMinTWSB (中明)
 
 #### Justfont
-- `/萌.png?font=openhuninn` → jf-openhuninn-1.1 (Open 粉圓)
+- `/萌.png?font=openhuninn` → jf-openhuninn-2.1 (Open 粉圓)
 
 #### 逢甲大學
 - `/萌.png?font=shuowen` → ShuoWen (說文標篆)

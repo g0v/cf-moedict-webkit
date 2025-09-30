@@ -126,7 +126,7 @@ function getFontName(fontParam: string): string {
 
 	// 其他
 	if (/rxkt/i.test(fontParam)) return 'Typography';
-	if (/openhuninn/i.test(fontParam)) return 'jf-openhuninn-1.1';
+	if (/openhuninn/i.test(fontParam)) return 'jf-openhuninn-2.1';
 
 	// 王漢宗字體
 	if (WT2FONT[fontParam]) return WT2FONT[fontParam];

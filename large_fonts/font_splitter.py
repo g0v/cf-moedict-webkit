@@ -10,7 +10,7 @@ with open("../word_list/word_list.json", "r", encoding="utf-8") as f:
 
 print(f"載入了 {len(moedict_words)} 個萌典單字")
 
-font = TTFont("ebas927.ttf")
+font = TTFont("jf-openhuninn-2.1.ttf")
 glyph_set = font.getGlyphSet()
 cmap = {cp:gn for table in font["cmap"].tables for cp,gn in table.cmap.items()}
 
