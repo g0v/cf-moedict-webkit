@@ -168,12 +168,14 @@ dist
 
 # large_fonts directory font files
 large_fonts/**/*.ttf
+large_fonts/**/*.ttc
 large_fonts/**/*.woff
 large_fonts/**/*.otf
 large_fonts/**/*.woff2
 large_fonts/**/*.svg
 
 large_fonts/*.ttf
+large_fonts/*.ttc
 large_fonts/*.woff
 large_fonts/*.otf
 large_fonts/*.woff2
