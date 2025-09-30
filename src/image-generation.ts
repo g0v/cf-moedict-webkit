@@ -262,9 +262,14 @@ export async function generateTextSVGWithR2Fonts(text: string, font: string, env
 
 					// 思源宋體的 SVG 尺寸為 1000x1000
 					// 所有7個字重：ExtraLight, Light, Regular, Medium, SemiBold, Bold, Heavy
-					if (fontName.includes('SourceHanSerif')) {
+					else if (fontName.includes('SourceHanSerif')) {
 						scale = initRatio * 1024 / 1000; // 思源宋體使用 1000x1000 的縮放比例
 						console.log(`[DEBUG] Using SourceHanSerif scale: ${scale}`);
+					}
+					// 思源黑體的 SVG 尺寸為 1000x1000
+					else if (fontName.includes('SourceHanSans')) {
+						scale = initRatio * 1024 / 1000; // 思源黑體使用 1000x1000 的縮放比例
+						console.log(`[DEBUG] Using SourceHanSans scale: ${scale}`);
 					}
 
 
@@ -279,10 +284,15 @@ export async function generateTextSVGWithR2Fonts(text: string, font: string, env
 					const scaleRatio = scale / baseScale;
 
 					let offsetX = (x + halfWidthAdjustX) - (1024 * scale) / 2 - 180 * ( 1 - scaleRatio ); // X 位置依 scale 比例調整
-					// 思源宋體的X偏移量要再多50px
+					// 思源宋體的X偏移量要多50px
 					if (fontName.includes('SourceHanSerif')) {
 						offsetX += 50;
 						console.log(`[DEBUG] Using SourceHanSerif offsetX: ${offsetX}`);
+					}
+					// 思源黑體的X偏移量也要多50px
+					else if (fontName.includes('SourceHanSans')) {
+						offsetX += 50;
+						console.log(`[DEBUG] Using SourceHanSans offsetX: ${offsetX}`);
 					}
 
 
