@@ -1,4 +1,4 @@
-# 上傳字體資料夾連同所有其中的SVG的指令(以SourceHanSerifTCBold為例)
+# 上傳字體資料夾連同所有其中的SVG的指令(以SourceHanSerifTCHeavy為例)
 
 正確的指令應該是這樣：
 
@@ -7,19 +7,19 @@
 ## **Dry-run 測試（模擬，不實際上傳）**
 
 ```bash
-rclone copy ./large_fonts/SourceHanSerifTCBold r2:moedict-fonts-preview/SourceHanSerifTCBold \
+rclone copy ./large_fonts/SourceHanSerifTCHeavy r2:moedict-fonts-preview/SourceHanSerifTCHeavy \
   --dry-run --progress --transfers 32 --checkers 64 --buffer-size 1M --no-traverse --fast-list
 ```
 
 ```bash
-rclone copy ./large_fonts/SourceHanSerifTCBold r2:moedict-fonts/SourceHanSerifTCBold \
+rclone copy ./large_fonts/SourceHanSerifTCHeavy r2:moedict-fonts/SourceHanSerifTCHeavy \
   --dry-run --progress --transfers 32 --checkers 64 --buffer-size 1M --no-traverse --fast-list
 ```
 
 ### **參數說明**
 
-* `./large_fonts/SourceHanSerifTCBold` → 本地來源資料夾
-* `r2:moedict-fonts-preview/SourceHanSerifTCBold` → R2 目標路徑
+* `./large_fonts/SourceHanSerifTCHeavy` → 本地來源資料夾
+* `r2:moedict-fonts-preview/SourceHanSerifTCHeavy` → R2 目標路徑
 * `--dry-run` → 只模擬動作，不真正上傳，用來檢查檔案列表
 * `--progress` → 顯示即時模擬進度
 
@@ -30,7 +30,7 @@ rclone copy ./large_fonts/SourceHanSerifTCBold r2:moedict-fonts/SourceHanSerifTC
 當 dry-run 顯示正確後，移除 `--dry-run` 正式執行：
 
 ```bash
-rclone copy ./large_fonts/SourceHanSerifTCBold r2:moedict-fonts-preview/SourceHanSerifTCBold \
+rclone copy ./large_fonts/SourceHanSerifTCHeavy r2:moedict-fonts-preview/SourceHanSerifTCHeavy \
   --progress \
   --transfers 32 \
   --checkers 64 \
@@ -41,7 +41,7 @@ rclone copy ./large_fonts/SourceHanSerifTCBold r2:moedict-fonts-preview/SourceHa
 ```
 
 ```bash
-rclone copy ./large_fonts/SourceHanSerifTCBold r2:moedict-fonts/SourceHanSerifTCBold \
+rclone copy ./large_fonts/SourceHanSerifTCHeavy r2:moedict-fonts/SourceHanSerifTCHeavy \
   --progress \
   --transfers 32 \
   --checkers 64 \
@@ -63,23 +63,23 @@ rclone copy ./large_fonts/SourceHanSerifTCBold r2:moedict-fonts/SourceHanSerifTC
 上傳完成後，檢查遠端是否有檔案：
 
 ```bash
-rclone ls r2:moedict-fonts-preview/SourceHanSerifTCBold | head -20
+rclone ls r2:moedict-fonts-preview/SourceHanSerifTCHeavy | head -20
 ```
 
 
 ```bash
-rclone ls r2:moedict-fonts/SourceHanSerifTCBold | head -20
+rclone ls r2:moedict-fonts/SourceHanSerifTCHeavy | head -20
 ```
 
 或只看檔案結構：
 
 ```bash
-rclone lsf r2:moedict-fonts-preview/SourceHanSerifTCBold
+rclone lsf r2:moedict-fonts-preview/SourceHanSerifTCHeavy
 ```
 
 
 ```bash
-rclone lsf r2:moedict-fonts/SourceHanSerifTCBold
+rclone lsf r2:moedict-fonts/SourceHanSerifTCHeavy
 ```
 
 如果看到正確的檔案列表，就表示成功複製！
@@ -90,14 +90,14 @@ rclone lsf r2:moedict-fonts/SourceHanSerifTCBold
 ## **確認後刪除本地檔案**
 
 ```bash
-# 刪除 large_fonts/SourceHanSerifTCBold 目錄連同其中所有檔案
-rm -rf ./large_fonts/SourceHanSerifTCBold
+# 刪除 large_fonts/SourceHanSerifTCHeavy 目錄連同其中所有檔案
+rm -rf ./large_fonts/SourceHanSerifTCHeavy
 
 # 或者使用更安全的方式，先確認目錄存在再刪除
-if [ -d "./large_fonts/SourceHanSerifTCBold" ]; then
-    rm -rf ./large_fonts/SourceHanSerifTCBold
-    echo "已刪除 SourceHanSerifTCBold 目錄"
+if [ -d "./large_fonts/SourceHanSerifTCHeavy" ]; then
+    rm -rf ./large_fonts/SourceHanSerifTCHeavy
+    echo "已刪除 SourceHanSerifTCHeavy 目錄"
 else
-    echo "SourceHanSerifTCBold 目錄不存在"
+    echo "SourceHanSerifTCHeavy 目錄不存在"
 fi
 ```
