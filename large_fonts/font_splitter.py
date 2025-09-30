@@ -18,7 +18,7 @@ UPM = font["head"].unitsPerEm
 ASC = font["hhea"].ascent
 
 # Output folder 設定
-output_folder = "EBAS"
+output_folder = "jf-openhuninn-2.1"
 os.makedirs(output_folder, exist_ok=True)
 
 # 只處理萌典中有的字
