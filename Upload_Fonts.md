@@ -1,4 +1,4 @@
-# 上傳字體資料夾連同所有其中的SVG的指令(以GenWanMinTWSB為例)
+# 上傳字體資料夾連同所有其中的SVG的指令(以jf-openhuninn-2.1為例)
 
 正確的指令應該是這樣：
 
@@ -7,19 +7,19 @@
 ## **Dry-run 測試（模擬，不實際上傳）**
 
 ```bash
-rclone copy ./large_fonts/GenWanMinTWSB r2:moedict-fonts-preview/GenWanMinTWSB \
+rclone copy ./large_fonts/jf-openhuninn-2.1 r2:moedict-fonts-preview/jf-openhuninn-2.1 \
   --dry-run --progress --transfers 32 --checkers 64 --buffer-size 1M --no-traverse --fast-list
 ```
 
 ```bash
-rclone copy ./large_fonts/GenWanMinTWSB r2:moedict-fonts/GenWanMinTWSB \
+rclone copy ./large_fonts/jf-openhuninn-2.1 r2:moedict-fonts/jf-openhuninn-2.1 \
   --dry-run --progress --transfers 32 --checkers 64 --buffer-size 1M --no-traverse --fast-list
 ```
 
 ### **參數說明**
 
-* `./large_fonts/GenWanMinTWSB` → 本地來源資料夾
-* `r2:moedict-fonts-preview/GenWanMinTWSB` → R2 目標路徑
+* `./large_fonts/jf-openhuninn-2.1` → 本地來源資料夾
+* `r2:moedict-fonts-preview/jf-openhuninn-2.1` → R2 目標路徑
 * `--dry-run` → 只模擬動作，不真正上傳，用來檢查檔案列表
 * `--progress` → 顯示即時模擬進度
 
@@ -30,7 +30,7 @@ rclone copy ./large_fonts/GenWanMinTWSB r2:moedict-fonts/GenWanMinTWSB \
 當 dry-run 顯示正確後，移除 `--dry-run` 正式執行：
 
 ```bash
-rclone copy ./large_fonts/GenWanMinTWSB r2:moedict-fonts-preview/GenWanMinTWSB \
+rclone copy ./large_fonts/jf-openhuninn-2.1 r2:moedict-fonts-preview/jf-openhuninn-2.1 \
   --progress \
   --transfers 32 \
   --checkers 64 \
@@ -41,7 +41,7 @@ rclone copy ./large_fonts/GenWanMinTWSB r2:moedict-fonts-preview/GenWanMinTWSB \
 ```
 
 ```bash
-rclone copy ./large_fonts/GenWanMinTWSB r2:moedict-fonts/GenWanMinTWSB \
+rclone copy ./large_fonts/jf-openhuninn-2.1 r2:moedict-fonts/jf-openhuninn-2.1 \
   --progress \
   --transfers 32 \
   --checkers 64 \
@@ -63,23 +63,23 @@ rclone copy ./large_fonts/GenWanMinTWSB r2:moedict-fonts/GenWanMinTWSB \
 上傳完成後，檢查遠端是否有檔案：
 
 ```bash
-rclone ls r2:moedict-fonts-preview/GenWanMinTWSB | head -20
+rclone ls r2:moedict-fonts-preview/jf-openhuninn-2.1 | head -20
 ```
 
 
 ```bash
-rclone ls r2:moedict-fonts/GenWanMinTWSB | head -20
+rclone ls r2:moedict-fonts/jf-openhuninn-2.1 | head -20
 ```
 
 或只看檔案結構：
 
 ```bash
-rclone lsf r2:moedict-fonts-preview/GenWanMinTWSB
+rclone lsf r2:moedict-fonts-preview/jf-openhuninn-2.1
 ```
 
 
 ```bash
-rclone lsf r2:moedict-fonts/GenWanMinTWSB
+rclone lsf r2:moedict-fonts/jf-openhuninn-2.1
 ```
 
 如果看到正確的檔案列表，就表示成功複製！
@@ -90,14 +90,14 @@ rclone lsf r2:moedict-fonts/GenWanMinTWSB
 ## **確認後刪除本地檔案**
 
 ```bash
-# 刪除 large_fonts/GenWanMinTWSB 目錄連同其中所有檔案
-rm -rf ./large_fonts/GenWanMinTWSB
+# 刪除 large_fonts/jf-openhuninn-2.1 目錄連同其中所有檔案
+rm -rf ./large_fonts/jf-openhuninn-2.1
 
 # 或者使用更安全的方式，先確認目錄存在再刪除
-if [ -d "./large_fonts/GenWanMinTWSB" ]; then
-    rm -rf ./large_fonts/GenWanMinTWSB
-    echo "已刪除 GenWanMinTWSB 目錄"
+if [ -d "./large_fonts/jf-openhuninn-2.1" ]; then
+    rm -rf ./large_fonts/jf-openhuninn-2.1
+    echo "已刪除 jf-openhuninn-2.1 目錄"
 else
-    echo "GenWanMinTWSB 目錄不存在"
+    echo "jf-openhuninn-2.1 目錄不存在"
 fi
 ```
