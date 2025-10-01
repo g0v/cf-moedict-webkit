@@ -13,14 +13,8 @@
 	/**
 	 * Bindings for CloudFlare services
 	 */
-	 /*  KV Namespace 待創建 */
+	 /*  KV Namespace 僅用於字體快取 */
 	"kv_namespaces": [
-		{
-			"binding": "DICTIONARY",
-			"id": "af7bb87b617c477d9dcf2bdc24940771",
-			"preview_id": "2b39bb4a9195434aa6725d3c4d908f78"
-		},
-
 		{
 			"binding": "KV_FONTS",
 			"id": "c0d83025c9a64c4fa0ba030d818dc925",
@@ -37,6 +31,11 @@
 			"binding": "ASSETS",
 			"bucket_name": "moedict-assets",
 			"preview_bucket_name": "moedict-assets-preview"
+		},
+		{
+			"binding": "DICTIONARY",
+			"bucket_name": "moedict-dictionary",
+			"preview_bucket_name": "moedict-dictionary-preview"
 		}
 	],
 	/**

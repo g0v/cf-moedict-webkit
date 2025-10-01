@@ -1,11 +1,14 @@
 // CloudFlare Worker 環境變數類型定義
 export interface Env {
-  // KV Storage 用於字典資料
-  DICTIONARY: KVNamespace;
+  // R2 Storage 用於字典資料
+  DICTIONARY: R2Bucket;
 
   // R2 Storage 用於字體檔案和靜態資源
   FONTS: R2Bucket;
   ASSETS: R2Bucket;
+
+  // KV Storage 用於字體快取
+  KV_FONTS: KVNamespace;
 
   // 環境變數
   FONT_BASE_URL?: string;
@@ -53,7 +56,7 @@ export interface Definition {
 // 跨語言對照資料
 export interface XRefData {
   [targetLang: string]: {
-    [wordId: string]: string[];
+    [wordId: string]: string | string[];
   };
 }
 

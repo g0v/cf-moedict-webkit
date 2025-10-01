@@ -19,7 +19,16 @@ export async function handlePageRequest(url: URL, env: Env): Promise<Response> {
 			/\b(?:Google|Twitterbot)\b/.test(userAgent);
 
 		// 嘗試讀取字典資料
-		const dictionaryData = await env.DICTIONARY.get(`${lang}/${fixedText}.json`);
+		// 先嘗試單字格式 (@字.json)
+		let dictionaryObject = await env.DICTIONARY.get(`${lang}/@${fixedText}.json`);
+		let dictionaryData = dictionaryObject ? await dictionaryObject.text() : null;
+
+		// 如果找不到單字，嘗試複合詞格式 (=詞.json)
+		if (!dictionaryData) {
+			dictionaryObject = await env.DICTIONARY.get(`${lang}/=${fixedText}.json`);
+			dictionaryData = dictionaryObject ? await dictionaryObject.text() : null;
+		}
+
 		const isWord = !!dictionaryData;
 
 		let payload: any = {};
@@ -89,26 +98,31 @@ export async function handlePageRequest(url: URL, env: Env): Promise<Response> {
 
 /**
  * 執行模糊搜尋
+ * 由於原專案沒有 lenToRegex.json，改為簡單的字符分割搜尋
  */
 async function performFuzzySearch(text: string, lang: DictionaryLang, env: Env): Promise<string[]> {
 	try {
-		const lenToRegexData = await env.DICTIONARY.get(`${lang}/lenToRegex.json`);
+		// 簡單的字符分割搜尋
+		// 將輸入文字分割成單個字符，作為搜尋候選
+		const terms: string[] = [];
 
-		if (!lenToRegexData) {
-			return [];
+		// 清理文字，移除特殊字符
+		const cleanText = text.replace(/[`~]/g, '');
+
+		// 將每個字符作為搜尋候選
+		for (let i = 0; i < cleanText.length; i++) {
+			const char = cleanText[i];
+			if (char && char.trim()) {
+				terms.push(char);
+			}
 		}
 
-		const { lenToRegex } = JSON.parse(lenToRegexData);
-		const lens = Object.keys(lenToRegex).map(Number).sort((a, b) => b - a);
-
-		let chunk = text.replace(/[`~]/g, '');
-
-		for (const len of lens) {
-			const regex = new RegExp(lenToRegex[len], 'g');
-			chunk = chunk.replace(regex, (match) => `\`${match}~`);
+		// 如果沒有找到任何字符，返回原始文字
+		if (terms.length === 0) {
+			terms.push(cleanText);
 		}
 
-		return chunk.split(/[`~]+/).filter(part => part.length > 0);
+		return terms;
 
 	} catch (error) {
 		console.error('Fuzzy search error:', error);
