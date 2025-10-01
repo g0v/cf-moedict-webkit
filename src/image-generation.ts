@@ -270,6 +270,9 @@ export async function generateTextSVGWithR2Fonts(text: string, font: string, env
 					else if (fontName.includes('SourceHanSans')) {
 						scale = initRatio * 1024 / 1000; // 思源黑體使用 1000x1000 的縮放比例
 						console.log(`[DEBUG] Using SourceHanSans scale: ${scale}`);
+					} else if (fontName.includes('jf-openhuninn-2.1')) {
+						scale = initRatio; // jf-openhuninn-2.1使用 1024x1024 的縮放比例，與楷體相同
+						console.log(`[DEBUG] Using jf-openhuninn-2.1 scale: ${scale}`);
 					}
 
 
@@ -283,7 +286,11 @@ export async function generateTextSVGWithR2Fonts(text: string, font: string, env
 					if (fontName.includes('GenWanMin')) {
 						halfWidthAdjustX = isHalfWidth ? 55 : 0;
 						console.log(`[DEBUG] Using GenWanMin halfWidthAdjustX: ${halfWidthAdjustX}`);
+					} else if (fontName.includes('jf-openhuninn-2.1')) {
+						halfWidthAdjustX = isHalfWidth ? 65 : 0;
+						console.log(`[DEBUG] Using jf-openhuninn-2.1 halfWidthAdjustX: ${halfWidthAdjustX}`);
 					}
+
 
 
 					// 動態計算位置：根據字符在九宮格中的位置，依 scale 調整
@@ -306,6 +313,11 @@ export async function generateTextSVGWithR2Fonts(text: string, font: string, env
 					else if (fontName.includes('GenWanMin')) {
 						offsetX += 50;
 						console.log(`[DEBUG] Using GenWanMin offsetX: ${offsetX}`);
+					}
+					// jf-openhuninn-2.1 的X偏移量也要多50px
+					else if (fontName.includes('jf-openhuninn-2.1')) {
+						offsetX += 45;
+						console.log(`[DEBUG] Using jf-openhuninn-2.1 offsetX: ${offsetX}`);
 					}
 
 
