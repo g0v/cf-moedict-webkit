@@ -274,6 +274,11 @@ export async function generateTextSVGWithR2Fonts(text: string, font: string, env
 						scale = initRatio; // jf-openhuninn-2.1使用 1024x1024 的縮放比例，與楷體相同
 						console.log(`[DEBUG] Using jf-openhuninn-2.1 scale: ${scale}`);
 					}
+					// Typography 的 SVG 尺寸為 1024x1024
+					else if (fontName.includes('Typography')) {
+						scale = initRatio; // Typography使用 1024x1024 的縮放比例
+						console.log(`[DEBUG] Using Typography scale: ${scale}`);
+					}
 
 
 
@@ -314,10 +319,15 @@ export async function generateTextSVGWithR2Fonts(text: string, font: string, env
 						offsetX += 50;
 						console.log(`[DEBUG] Using GenWanMin offsetX: ${offsetX}`);
 					}
-					// jf-openhuninn-2.1 的X偏移量也要多50px
+					// jf-openhuninn-2.1 的X偏移量也要多45px
 					else if (fontName.includes('jf-openhuninn-2.1')) {
 						offsetX += 45;
 						console.log(`[DEBUG] Using jf-openhuninn-2.1 offsetX: ${offsetX}`);
+					}
+					// Typography 的X偏移量也要多25px
+					else if (fontName.includes('Typography')) {
+						offsetX += 23;
+						console.log(`[DEBUG] Using Typography offsetX: ${offsetX}`);
 					}
 
 
