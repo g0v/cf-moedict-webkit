@@ -1,4 +1,4 @@
-# 上傳字體資料夾連同所有其中的SVG的指令(以Typography為例)
+# 上傳字體資料夾連同所有其中的SVG的指令(以ShuoWen為例)
 
 正確的指令應該是這樣：
 
@@ -7,19 +7,19 @@
 ## **Dry-run 測試（模擬，不實際上傳）**
 
 ```bash
-rclone copy ./large_fonts/Typography r2:moedict-fonts-preview/Typography \
+rclone copy ./large_fonts/ShuoWen r2:moedict-fonts-preview/ShuoWen \
   --dry-run --progress --transfers 32 --checkers 64 --buffer-size 1M --no-traverse --fast-list
 ```
 
 ```bash
-rclone copy ./large_fonts/Typography r2:moedict-fonts/Typography \
+rclone copy ./large_fonts/ShuoWen r2:moedict-fonts/ShuoWen \
   --dry-run --progress --transfers 32 --checkers 64 --buffer-size 1M --no-traverse --fast-list
 ```
 
 ### **參數說明**
 
-* `./large_fonts/Typography` → 本地來源資料夾
-* `r2:moedict-fonts-preview/Typography` → R2 目標路徑
+* `./large_fonts/ShuoWen` → 本地來源資料夾
+* `r2:moedict-fonts-preview/ShuoWen` → R2 目標路徑
 * `--dry-run` → 只模擬動作，不真正上傳，用來檢查檔案列表
 * `--progress` → 顯示即時模擬進度
 
@@ -30,7 +30,7 @@ rclone copy ./large_fonts/Typography r2:moedict-fonts/Typography \
 當 dry-run 顯示正確後，移除 `--dry-run` 正式執行：
 
 ```bash
-rclone copy ./large_fonts/Typography r2:moedict-fonts-preview/Typography \
+rclone copy ./large_fonts/ShuoWen r2:moedict-fonts-preview/ShuoWen \
   --progress \
   --transfers 32 \
   --checkers 64 \
@@ -43,7 +43,7 @@ rclone copy ./large_fonts/Typography r2:moedict-fonts-preview/Typography \
 (note: 若無法rclone copy, 可改用rclone sync替代)
 
 ```bash
-rclone copy ./large_fonts/Typography r2:moedict-fonts/Typography \
+rclone copy ./large_fonts/ShuoWen r2:moedict-fonts/ShuoWen \
   --progress \
   --transfers 32 \
   --checkers 64 \
@@ -67,23 +67,23 @@ rclone copy ./large_fonts/Typography r2:moedict-fonts/Typography \
 上傳完成後，檢查遠端是否有檔案：
 
 ```bash
-rclone ls r2:moedict-fonts-preview/Typography | head -20
+rclone ls r2:moedict-fonts-preview/ShuoWen | head -20
 ```
 
 
 ```bash
-rclone ls r2:moedict-fonts/Typography | head -20
+rclone ls r2:moedict-fonts/ShuoWen | head -20
 ```
 
 或只看檔案結構：
 
 ```bash
-rclone lsf r2:moedict-fonts-preview/Typography
+rclone lsf r2:moedict-fonts-preview/ShuoWen
 ```
 
 
 ```bash
-rclone lsf r2:moedict-fonts/Typography
+rclone lsf r2:moedict-fonts/ShuoWen
 ```
 
 如果看到正確的檔案列表，就表示成功複製！
@@ -94,14 +94,14 @@ rclone lsf r2:moedict-fonts/Typography
 ## **確認後刪除本地檔案**
 
 ```bash
-# 刪除 large_fonts/Typography 目錄連同其中所有檔案
-rm -rf ./large_fonts/Typography
+# 刪除 large_fonts/ShuoWen 目錄連同其中所有檔案
+rm -rf ./large_fonts/ShuoWen
 
 # 或者使用更安全的方式，先確認目錄存在再刪除
-if [ -d "./large_fonts/Typography" ]; then
-    rm -rf ./large_fonts/Typography
-    echo "已刪除 Typography 目錄"
+if [ -d "./large_fonts/ShuoWen" ]; then
+    rm -rf ./large_fonts/ShuoWen
+    echo "已刪除 ShuoWen 目錄"
 else
-    echo "Typography 目錄不存在"
+    echo "ShuoWen 目錄不存在"
 fi
 ```
