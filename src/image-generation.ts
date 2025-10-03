@@ -349,10 +349,11 @@ export async function generateTextSVGWithR2Fonts(text: string, font: string, env
 						console.log(`[DEBUG] Using ShuoWen full-width offsetY: ${offsetY}`);
 					}
 
-					// ShuoWen 半形字的Y偏移量要減10px
+					// ShuoWen 半形字的Y偏移量要減10px，X偏移量要減50px
 					if (fontName.includes('ShuoWen') && isHalfWidth) {
 						offsetY -= 10;
-						console.log(`[DEBUG] Using ShuoWen half-width offsetY: ${offsetY}`);
+						offsetX -= 50;
+						console.log(`[DEBUG] Using ShuoWen half-width offsetX: ${offsetX}, offsetY: ${offsetY}`);
 					}
 
 					console.log(`[DEBUG] Character ${char} position: font=${fontName}, isHalfWidth=${isHalfWidth}, adjustX=${halfWidthAdjustX}, offsetX=${offsetX}, offsetY=${offsetY}, scale=${scale}`);
