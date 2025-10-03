@@ -367,10 +367,12 @@ export async function generateTextSVGWithR2Fonts(text: string, font: string, env
 						console.log(`[DEBUG] Using ShuoWen half-width offsetX: ${offsetX}, offsetY: ${offsetY}`);
 					}
 
-					// HanWangKanDaYan, HanWangKanTan 的半形字X偏移量要減20px
-					if ((fontName.includes('HanWangKanDaYan') || fontName.includes('HanWangKanTan')) && isHalfWidth) {
+					// HanWangKanDaYan, HanWangKanTan, HanWangZonYi 的半形字X偏移量要減20px
+					if ((fontName.includes('HanWangKanDaYan')
+						 || fontName.includes('HanWangKanTan')
+						 || fontName.includes('HanWangZonYi')) && isHalfWidth) {
 						offsetX -= 20;
-						console.log(`[DEBUG] Using HanWangKanDaYan or HanWangKanTan half-width offsetX: ${offsetX}, offsetY: ${offsetY}`);
+						console.log(`[DEBUG] Using HanWangKanDaYan or HanWangKanTan or HanWangZonYi half-width offsetX: ${offsetX}, offsetY: ${offsetY}`);
 					}
 
 					console.log(`[DEBUG] Character ${char} position: font=${fontName}, isHalfWidth=${isHalfWidth}, adjustX=${halfWidthAdjustX}, offsetX=${offsetX}, offsetY=${offsetY}, scale=${scale}`);
