@@ -41,7 +41,7 @@ npm install
 ### 本地開發
 ```bash
 # 啟動開發伺服器
-npm run dev
+npx wrangler dev --remote
 
 # 測試功能
 curl "http://localhost:8787/萌.json"
@@ -58,13 +58,15 @@ wrangler auth login
 
 #### 2. 創建必要資源
 ```bash
-# 創建 KV Storage
-wrangler kv:namespace create "DICTIONARY"
-wrangler kv:namespace create "DICTIONARY" --preview
+
 
 # 創建 R2 Storage
 wrangler r2 bucket create moedict-fonts
+wrangler r2 bucket create moedict-fonts-preview
 wrangler r2 bucket create moedict-assets
+wrangler r2 bucket create moedict-assets-preview
+wrangler r2 bucket create moedict-dictionary
+wrangler r2 bucket create moedict-dictionary-preview
 ```
 
 #### 3. 更新配置

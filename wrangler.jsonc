@@ -14,13 +14,13 @@
 	 * Bindings for CloudFlare services
 	 */
 	 /*  KV Namespace 僅用於字體快取 */
-	"kv_namespaces": [
+	/* "kv_namespaces": [
 		{
 			"binding": "KV_FONTS",
 			"id": "c0d83025c9a64c4fa0ba030d818dc925",
 			"preview_id": "2e90e8b8257545dab3fe1d519df963ae"
 		}
-	],
+	], */
 	"r2_buckets": [
 		{
 			"binding": "FONTS",
