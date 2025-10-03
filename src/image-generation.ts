@@ -367,6 +367,11 @@ export async function generateTextSVGWithR2Fonts(text: string, font: string, env
 						console.log(`[DEBUG] Using ShuoWen half-width offsetX: ${offsetX}, offsetY: ${offsetY}`);
 					}
 
+					if (fontName.includes('HanWangKanDaYan') && isHalfWidth) {
+						offsetX -= 20;
+						console.log(`[DEBUG] Using HanWangKanDaYan half-width offsetX: ${offsetX}, offsetY: ${offsetY}`);
+					}
+
 					console.log(`[DEBUG] Character ${char} position: font=${fontName}, isHalfWidth=${isHalfWidth}, adjustX=${halfWidthAdjustX}, offsetX=${offsetX}, offsetY=${offsetY}, scale=${scale}`);
 
 					// 簡單的 transform
