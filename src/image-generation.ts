@@ -274,12 +274,17 @@ export async function generateTextSVGWithR2Fonts(text: string, font: string, env
 						scale = initRatio; // jf-openhuninn-2.1使用 1024x1024 的縮放比例，與楷體相同
 						console.log(`[DEBUG] Using jf-openhuninn-2.1 scale: ${scale}`);
 					}
-					// Typography 的 SVG 尺寸為 1024x1024
+					// Typography 的 SVG 尺寸為 1024x1024, 與楷體相同
 					else if (fontName.includes('Typography')) {
 						scale = initRatio; // Typography使用 1024x1024 的縮放比例
 						console.log(`[DEBUG] Using Typography scale: ${scale}`);
 					}
 
+					// ShuoWen 的 SVG 尺寸為 1024x1024，與楷體相同
+					else if (fontName.includes('ShuoWen')) {
+						scale = initRatio; // ShuoWen 使用與楷體相同的縮放比例
+						console.log(`[DEBUG] Using ShuoWen scale: ${scale}`);
+					}
 
 
 					// 半形字（ASCII 可顯示範圍）在視覺上偏窄，向右再位移一些以達到置中視覺
@@ -329,9 +334,26 @@ export async function generateTextSVGWithR2Fonts(text: string, font: string, env
 						offsetX += 23;
 						console.log(`[DEBUG] Using Typography offsetX: ${offsetX}`);
 					}
+					// ShuoWen 的X偏移量要多50px，與篆體類似
+					else if (fontName.includes('ShuoWen')) {
+						offsetX += 50;
+						console.log(`[DEBUG] Using ShuoWen offsetX: ${offsetX}`);
+					}
 
 
-					const offsetY = y - (1024 * scale) / 2 -  (180 * (1 - scaleRatio )) + 280; // Y 位置依 scale 比例調整
+					let offsetY = y - (1024 * scale) / 2 -  (180 * (1 - scaleRatio )) + 280; // Y 位置依 scale 比例調整
+
+					// ShuoWen 全形字的Y偏移量要多50px，但半形字不要多
+					if (fontName.includes('ShuoWen') && !isHalfWidth) {
+						offsetY += 50;
+						console.log(`[DEBUG] Using ShuoWen full-width offsetY: ${offsetY}`);
+					}
+
+					// ShuoWen 半形字的Y偏移量要減10px
+					if (fontName.includes('ShuoWen') && isHalfWidth) {
+						offsetY -= 10;
+						console.log(`[DEBUG] Using ShuoWen half-width offsetY: ${offsetY}`);
+					}
 
 					console.log(`[DEBUG] Character ${char} position: font=${fontName}, isHalfWidth=${isHalfWidth}, adjustX=${halfWidthAdjustX}, offsetX=${offsetX}, offsetY=${offsetY}, scale=${scale}`);
 
