@@ -286,6 +286,12 @@ export async function generateTextSVGWithR2Fonts(text: string, font: string, env
 						console.log(`[DEBUG] Using ShuoWen scale: ${scale}`);
 					}
 
+					// HanWang 的 SVG 尺寸為 1024x1024，與楷體相同
+					else if (fontName.includes('HanWang')) {
+						scale = initRatio; // HanWang 使用與楷體相同的縮放比例
+						console.log(`[DEBUG] Using HanWang scale: ${scale}`);
+					}
+
 
 					// 半形字（ASCII 可顯示範圍）在視覺上偏窄，向右再位移一些以達到置中視覺
 					const isHalfWidth = /[\x20-\x7E]/.test(char);
@@ -353,6 +359,11 @@ export async function generateTextSVGWithR2Fonts(text: string, font: string, env
 					if (fontName.includes('ShuoWen') && isHalfWidth) {
 						offsetY -= 10;
 						offsetX -= 50;
+						console.log(`[DEBUG] Using ShuoWen half-width offsetX: ${offsetX}, offsetY: ${offsetY}`);
+					}
+
+					if (fontName.includes('HanWang') && isHalfWidth) {
+						offsetX += 20;
 						console.log(`[DEBUG] Using ShuoWen half-width offsetX: ${offsetX}, offsetY: ${offsetY}`);
 					}
 
