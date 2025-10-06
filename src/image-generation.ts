@@ -345,6 +345,11 @@ export async function generateTextSVGWithR2Fonts(text: string, font: string, env
 						offsetX += 50;
 						console.log(`[DEBUG] Using ShuoWen offsetX: ${offsetX}`);
 					}
+					// cwTeXQMing 全形字的X偏移量要多25px，但半形字不要
+					else if (fontName.includes('cwTeXQMing') && !isHalfWidth) {
+						offsetX += 25;
+						console.log(`[DEBUG] Using cwTeXQMing full-width offsetX: ${offsetX}`);
+					}
 
 
 					let offsetY = y - (1024 * scale) / 2 -  (180 * (1 - scaleRatio )) + 280; // Y 位置依 scale 比例調整

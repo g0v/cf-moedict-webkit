@@ -1,4 +1,4 @@
-# 上傳字體資料夾連同所有其中的SVG的指令(以HanWangMingLight為例)
+# 上傳字體資料夾連同所有其中的SVG的指令(以cwTeXQYuan為例)
 
 正確的指令應該是這樣：
 
@@ -7,19 +7,19 @@
 ## **Dry-run 測試（模擬，不實際上傳）**
 
 ```bash
-rclone copy ./large_fonts/HanWangMingLight r2:moedict-fonts-preview/HanWangMingLight \
+rclone copy ./large_fonts/cwTeXQYuan r2:moedict-fonts-preview/cwTeXQYuan \
   --dry-run --progress --transfers 32 --checkers 64 --buffer-size 1M --no-traverse --fast-list
 ```
 
 ```bash
-rclone copy ./large_fonts/HanWangMingLight r2:moedict-fonts/HanWangMingLight \
+rclone copy ./large_fonts/cwTeXQYuan r2:moedict-fonts/cwTeXQYuan \
   --dry-run --progress --transfers 32 --checkers 64 --buffer-size 1M --no-traverse --fast-list
 ```
 
 ### **參數說明**
 
-* `./large_fonts/HanWangMingLight` → 本地來源資料夾
-* `r2:moedict-fonts-preview/HanWangMingLight` → R2 目標路徑
+* `./large_fonts/cwTeXQYuan` → 本地來源資料夾
+* `r2:moedict-fonts-preview/cwTeXQYuan` → R2 目標路徑
 * `--dry-run` → 只模擬動作，不真正上傳，用來檢查檔案列表
 * `--progress` → 顯示即時模擬進度
 
@@ -30,7 +30,7 @@ rclone copy ./large_fonts/HanWangMingLight r2:moedict-fonts/HanWangMingLight \
 當 dry-run 顯示正確後，移除 `--dry-run` 正式執行：
 
 ```bash
-rclone copy ./large_fonts/HanWangMingLight r2:moedict-fonts-preview/HanWangMingLight \
+rclone copy ./large_fonts/cwTeXQYuan r2:moedict-fonts-preview/cwTeXQYuan \
   --progress \
   --transfers 32 \
   --checkers 64 \
@@ -43,7 +43,7 @@ rclone copy ./large_fonts/HanWangMingLight r2:moedict-fonts-preview/HanWangMingL
 (note: 若無法rclone copy, 可改用rclone sync替代)
 
 ```bash
-rclone copy ./large_fonts/HanWangMingLight r2:moedict-fonts/HanWangMingLight \
+rclone copy ./large_fonts/cwTeXQYuan r2:moedict-fonts/cwTeXQYuan \
   --progress \
   --transfers 32 \
   --checkers 64 \
@@ -67,23 +67,23 @@ rclone copy ./large_fonts/HanWangMingLight r2:moedict-fonts/HanWangMingLight \
 上傳完成後，檢查遠端是否有檔案：
 
 ```bash
-rclone ls r2:moedict-fonts-preview/HanWangMingLight | head -20
+rclone ls r2:moedict-fonts-preview/cwTeXQYuan | head -20
 ```
 
 
 ```bash
-rclone ls r2:moedict-fonts/HanWangMingLight | head -20
+rclone ls r2:moedict-fonts/cwTeXQYuan | head -20
 ```
 
 或只看檔案結構：
 
 ```bash
-rclone lsf r2:moedict-fonts-preview/HanWangMingLight
+rclone lsf r2:moedict-fonts-preview/cwTeXQYuan
 ```
 
 
 ```bash
-rclone lsf r2:moedict-fonts/HanWangMingLight
+rclone lsf r2:moedict-fonts/cwTeXQYuan
 ```
 
 如果看到正確的檔案列表，就表示成功複製！
@@ -94,14 +94,14 @@ rclone lsf r2:moedict-fonts/HanWangMingLight
 ## **確認後刪除本地檔案**
 
 ```bash
-# 刪除 large_fonts/HanWangMingLight 目錄連同其中所有檔案
-rm -rf ./large_fonts/HanWangMingLight
+# 刪除 large_fonts/cwTeXQYuan 目錄連同其中所有檔案
+rm -rf ./large_fonts/cwTeXQYuan
 
 # 或者使用更安全的方式，先確認目錄存在再刪除
-if [ -d "./large_fonts/HanWangMingLight" ]; then
-    rm -rf ./large_fonts/HanWangMingLight
-    echo "已刪除 HanWangMingLight 目錄"
+if [ -d "./large_fonts/cwTeXQYuan" ]; then
+    rm -rf ./large_fonts/cwTeXQYuan
+    echo "已刪除 cwTeXQYuan 目錄"
 else
-    echo "HanWangMingLight 目錄不存在"
+    echo "cwTeXQYuan 目錄不存在"
 fi
 ```
