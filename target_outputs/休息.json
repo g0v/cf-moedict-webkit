@@ -1,0 +1,67 @@
+{
+  "Deutsch": "Pause machen  (V)​",
+  "English": "rest",
+  "francais": "se reposer",
+  "heteronyms": [
+    {
+      "audio_id": "397600008",
+      "bopomofo": "ㄒㄧㄡ　ㄒㄧˊ",
+      "definitions": [
+        {
+          "antonyms": "<a href=\"./#工作\">工作</a>,<a href=\"./#作\">作</a><a href=\"./#工\">工</a>,<a href=\"./#做事\">做事</a>",
+          "def": "<span class=\"punct\"><a href=\"./#歇息\">歇息</a>。</span><span class=\"punct\">《<a href=\"./#禮記\">禮記</a>．</span><span class=\"punct\"><a href=\"./#月令\">月令</a>》：</span><span class=\"punct\">「<a href=\"./#勞農\">勞農</a></span><a href=\"./#以\">以</a><a href=\"./#休息\">休息</a><span class=\"punct\"><a href=\"./#之\">之</a>。」</span><a href=\"./#也\">也</a><a href=\"./#作\">作</a><span class=\"punct\">「<a href=\"./#庥息\">庥息</a>」。</span>",
+          "synonyms": "<a href=\"./#停息\">停息</a>,<a href=\"./#停歇\">停歇</a>,<a href=\"./#憩息\">憩息</a>,<a href=\"./#休憩\">休憩</a>,<a href=\"./#止息\">止息</a>"
+        },
+        {
+          "antonyms": "<a href=\"./#工作\">工作</a>,<a href=\"./#作\">作</a><a href=\"./#工\">工</a>,<a href=\"./#做事\">做事</a>",
+          "def": "<span class=\"punct\"><a href=\"./#休養生息\">休養生息</a>。</span>",
+          "quote": [
+            "<a href=\"./#南朝\">南朝</a><span class=\"punct\"><a href=\"./#宋\">宋</a>．</span><a href=\"./#鮑照\">鮑照</a>〈<a href=\"./#河清\">河清</a><span class=\"punct\"><a href=\"./#頌\">頌</a>．</span><span class=\"punct\"><a href=\"./#序\">序</a>〉：</span><span class=\"punct\">「<a href=\"./#豈\">豈</a></span><a href=\"./#徒\">徒</a><a href=\"./#世\">世</a><a href=\"./#無窮\">無窮</a><span class=\"punct\"><a href=\"./#人\">人</a>，</span><a href=\"./#民\">民</a><a href=\"./#獲\">獲</a><span class=\"punct\"><a href=\"./#休息\">休息</a>。」</span>",
+            "<span class=\"punct\">《<a href=\"./#五代史\">五代史</a></span><span class=\"punct\"><a href=\"./#平話\">平話</a>．</span><a href=\"./#周\">周</a><span class=\"punct\"><a href=\"./#史\">史</a>．</span><a href=\"./#卷\">卷</a><span class=\"punct\"><a href=\"./#下\">下</a>》：</span><span class=\"punct\">「<a href=\"./#自此\">自此</a></span><a href=\"./#邊郡\">邊郡</a><a href=\"./#之\">之</a><span class=\"punct\"><a href=\"./#民\">民</a>，</span><a href=\"./#得\">得</a><a href=\"./#免\">免</a><a href=\"./#抄掠\">抄掠</a><a href=\"./#之\">之</a><span class=\"punct\"><a href=\"./#禍\">禍</a>，</span><a href=\"./#漸漸\">漸漸</a><a href=\"./#休息\">休息</a><a href=\"./#生\">生</a><a href=\"./#聚\">聚</a><span class=\"punct\"><a href=\"./#也\">也</a>。」</span>"
+          ],
+          "synonyms": "<a href=\"./#停息\">停息</a>,<a href=\"./#停歇\">停歇</a>,<a href=\"./#憩息\">憩息</a>,<a href=\"./#休憩\">休憩</a>,<a href=\"./#止息\">止息</a>"
+        },
+        {
+          "def": "<span class=\"punct\"><a href=\"./#安息\">安息</a>。</span>",
+          "quote": [
+            "<span class=\"punct\">《<a href=\"./#淮南子\">淮南子</a>．</span><span class=\"punct\"><a href=\"./#精神\">精神</a>》：</span><span class=\"punct\">「<a href=\"./#或者\">或者</a></span><a href=\"./#生\">生</a><a href=\"./#乃\">乃</a><a href=\"./#徭役\">徭役</a><span class=\"punct\"><a href=\"./#也\">也</a>，</span><a href=\"./#而\">而</a><a href=\"./#死\">死</a><a href=\"./#乃\">乃</a><a href=\"./#休息\">休息</a><span class=\"punct\"><a href=\"./#也\">也</a>。」</span>"
+          ]
+        }
+      ],
+      "pinyin": "xiū xí"
+    }
+  ],
+  "title": "<a href=\"./#休\">休</a><a href=\"./#息\">息</a>",
+  "translation": {
+    "Deutsch": [
+      "Pause machen  (V)​",
+      "sich ausruhen  (V)​"
+    ],
+    "English": [
+      "rest",
+      "to rest"
+    ],
+    "francais": [
+      "se reposer"
+    ]
+  },
+  "xrefs": [
+    {
+      "lang": "t",
+      "words": [
+        "歇",
+        "歇工",
+        "歇睏",
+        "停跤",
+        "停睏"
+      ]
+    },
+    {
+      "lang": "h",
+      "words": [
+        "歇睏",
+        "休息"
+      ]
+    }
+  ]
+}
