@@ -345,14 +345,26 @@ export async function generateTextSVGWithR2Fonts(text: string, font: string, env
 						offsetX += 50;
 						console.log(`[DEBUG] Using ShuoWen offsetX: ${offsetX}`);
 					}
-					// cwTeXQMing 全形字的X偏移量要多25px，但半形字不要
-					else if (fontName.includes('cwTeXQMing') && !isHalfWidth) {
-						offsetX += 25;
-						console.log(`[DEBUG] Using cwTeXQMing full-width offsetX: ${offsetX}`);
+					// cwTeXQMing, cwTeXQKai, cwTeXQFangsong 全形字的X偏移量要多25px or 20px，但半形字不要
+					else if ((fontName.includes('cwTeXQMing')
+						|| fontName.includes('cwTeXQKai')
+						|| fontName.includes('cwTeXQFangsong')) && !isHalfWidth) {
+						offsetX +=  fontName.includes('cwTeXQKai') || fontName.includes('cwTeXQFangsong') ? 20 : 25;
+						console.log(`[DEBUG] Using cwTeXQMing or cwTeXQKai or cwTeXQFangsong full-width offsetX: ${offsetX}`);
 					}
 
 
 					let offsetY = y - (1024 * scale) / 2 -  (180 * (1 - scaleRatio )) + 280; // Y 位置依 scale 比例調整
+
+
+					// cwTexQYuan, cwTeXQHei, cwTeXQKai, cwTeXQFangsong 的 y,p,q,g 的y偏移量要少25px
+					if ((fontName.includes('cwTeXQYuan')
+						|| fontName.includes('cwTeXQHei')
+						|| fontName.includes('cwTeXQKai')
+						|| fontName.includes('cwTeXQFangsong')) && (char === 'y' || char === 'p' || char === 'q' || char === 'g')) {
+						offsetY -= 25;
+						console.log(`[DEBUG] Using cwTeXQYuan, cwTeXQHei, cwTeXQKai, cwTeXQFangsong offsetY: ${offsetY}`);
+					}
 
 					// ShuoWen 全形字的Y偏移量要多50px，但半形字不要多
 					if (fontName.includes('ShuoWen') && !isHalfWidth) {
