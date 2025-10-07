@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 上傳字典資料到 R2 Storage 的腳本
-# 使用 rclone sync 將 pack, pcck, phck, ptck 資料夾上傳到 moedict-dictionary-preview
+# 使用 rclone sync 將 pack, pcck, phck, ptck 資料夾上傳到 moedict-dictionary
 
 set -e  # 遇到錯誤時退出
 
@@ -22,7 +22,7 @@ fi
 
 # R2 Storage 配置
 R2_REMOTE="r2"
-R2_BUCKET="moedict-dictionary-preview"
+R2_BUCKET="moedict-dictionary"
 
 # 要上傳的資料夾列表
 FOLDERS=("pack" "pcck" "phck" "ptck")
