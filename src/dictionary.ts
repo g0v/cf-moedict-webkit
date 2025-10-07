@@ -1,5 +1,6 @@
 import { Env, DictionaryLang, DictionaryAPIResponse, ErrorResponse, DictionaryEntry, XRefData } from './types';
 import { parseTextFromUrl, fixMojibake, getCORSHeaders } from './index';
+import { bucketOf, fillBucket } from './dictionary_tools';
 
 /**
  * 處理字典查詢 API 請求
@@ -10,18 +11,11 @@ export async function handleDictionaryAPI(url: URL, env: Env): Promise<Response>
 	const fixedText = fixMojibake(cleanText);
 
 	try {
-		// 嘗試從 R2 Storage 讀取字典資料
-		// 先嘗試單字格式 (@字.json)
-		let dictionaryObject = await env.DICTIONARY.get(`${lang}/@${fixedText}.json`);
-		let dictionaryData = dictionaryObject ? await dictionaryObject.text() : null;
+		// 使用 bucket 機制查詢字典資料
+		const bucket = bucketOf(fixedText, lang);
+		const bucketResult = await fillBucket(fixedText, bucket, lang, env);
 
-		// 如果找不到單字，嘗試複合詞格式 (=詞.json)
-		if (!dictionaryData) {
-			dictionaryObject = await env.DICTIONARY.get(`${lang}/=${fixedText}.json`);
-			dictionaryData = dictionaryObject ? await dictionaryObject.text() : null;
-		}
-
-		if (!dictionaryData) {
+		if (bucketResult.err || !bucketResult.data) {
 			// 如果找不到確切匹配，嘗試模糊搜尋
 			const searchResult = await performFuzzySearch(fixedText, lang, env);
 
@@ -51,8 +45,8 @@ export async function handleDictionaryAPI(url: URL, env: Env): Promise<Response>
 			});
 		}
 
-		// 解析字典資料
-		const entry: DictionaryEntry = JSON.parse(dictionaryData);
+		// 使用從 bucket 獲取的資料
+		const entry: DictionaryEntry = bucketResult.data;
 
 		// 處理字典資料
 		const processedEntry = await processDictionaryEntry(entry, lang, env);
