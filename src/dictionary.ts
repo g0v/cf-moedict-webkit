@@ -261,6 +261,7 @@ async function getCrossReferences(text: string, lang: DictionaryLang, env: Env):
 		const xrefData = await xrefObject.text();
 		const xref: XRefData = JSON.parse(xrefData);
 		console.log('🔍 [GetCrossReferences] xref 資料解析完成，語言數量:', Object.keys(xref).length);
+		console.log('🔍 [GetCrossReferences] xref 資料內容:', JSON.stringify(xref, null, 2));
 
 		const result: Array<{ lang: DictionaryLang; words: string[] }> = [];
 
@@ -268,15 +269,21 @@ async function getCrossReferences(text: string, lang: DictionaryLang, env: Env):
 		for (const [targetLang, words] of Object.entries(xref)) {
 			if (words[text]) {
 				console.log('🔍 [GetCrossReferences] 找到對照，目標語言:', targetLang);
+				console.log('🔍 [GetCrossReferences] 原始 wordData:', words[text]);
+
 				// 處理逗號分隔的詞彙列表
 				const wordData = words[text];
 				let wordList: string[] = [];
 
 				if (typeof wordData === 'string') {
+					console.log('🔍 [GetCrossReferences] 處理字串格式的 wordData');
 					wordList = wordData.split(',').map((w: string) => w.trim()).filter((w: string) => w.length > 0);
 				} else if (Array.isArray(wordData)) {
+					console.log('🔍 [GetCrossReferences] 處理陣列格式的 wordData');
 					wordList = wordData;
 				}
+
+				console.log('🔍 [GetCrossReferences] 處理後的 wordList:', wordList);
 
 				if (wordList.length > 0) {
 					console.log('🔍 [GetCrossReferences] 添加對照結果:', targetLang, wordList);
