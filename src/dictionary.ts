@@ -7,19 +7,36 @@ import { bucketOf, fillBucket } from './dictionary_tools';
  * 對應原本的 @get '/:text.json' 路由
  */
 export async function handleDictionaryAPI(url: URL, env: Env): Promise<Response> {
+	console.log('🔍 [DictionaryAPI] 開始處理字典查詢請求');
+	console.log('🔍 [DictionaryAPI] URL:', url.href);
+	console.log('🔍 [DictionaryAPI] Pathname:', url.pathname);
+
 	const { text, lang, cleanText } = parseTextFromUrl(url.pathname);
+	console.log('🔍 [DictionaryAPI] 解析結果 - text:', text, 'lang:', lang, 'cleanText:', cleanText);
+
 	const fixedText = fixMojibake(cleanText);
+	console.log('🔍 [DictionaryAPI] 修復後文字:', fixedText);
 
 	try {
 		// 使用 bucket 機制查詢字典資料
 		const bucket = bucketOf(fixedText, lang);
+		console.log('🔍 [DictionaryAPI] 計算出的 bucket:', bucket);
+
 		const bucketResult = await fillBucket(fixedText, bucket, lang, env);
+		console.log('🔍 [DictionaryAPI] Bucket 查詢結果:', {
+			hasData: !!bucketResult.data,
+			hasError: bucketResult.err,
+			bsCount: bucketResult.bs?.length || 0
+		});
 
 		if (bucketResult.err || !bucketResult.data) {
+			console.log('🔍 [DictionaryAPI] Bucket 查詢失敗，開始模糊搜尋');
 			// 如果找不到確切匹配，嘗試模糊搜尋
 			const searchResult = await performFuzzySearch(fixedText, lang, env);
+			console.log('🔍 [DictionaryAPI] 模糊搜尋結果:', searchResult);
 
 			if (searchResult.length === 0) {
+				console.log('🔍 [DictionaryAPI] 模糊搜尋也無結果，返回 404');
 				const errorResponse: ErrorResponse = {
 					error: 'Not Found',
 					message: `找不到詞彙: ${fixedText}`,
@@ -35,6 +52,7 @@ export async function handleDictionaryAPI(url: URL, env: Env): Promise<Response>
 				});
 			}
 
+			console.log('🔍 [DictionaryAPI] 返回模糊搜尋結果');
 			// 返回搜尋結果
 			return new Response(JSON.stringify({ terms: searchResult }), {
 				status: 404,
@@ -47,15 +65,20 @@ export async function handleDictionaryAPI(url: URL, env: Env): Promise<Response>
 
 		// 使用從 bucket 獲取的資料
 		const entry: DictionaryEntry = bucketResult.data;
+		console.log('🔍 [DictionaryAPI] 開始處理字典條目資料');
 
 		// 處理字典資料
 		const processedEntry = await processDictionaryEntry(entry, lang, env);
+		console.log('🔍 [DictionaryAPI] 字典條目處理完成，標題:', processedEntry.title);
 
 		// 添加跨語言對照
+		console.log('🔍 [DictionaryAPI] 開始獲取跨語言對照');
 		const xrefs = await getCrossReferences(fixedText, lang, env);
+		console.log('🔍 [DictionaryAPI] 跨語言對照結果:', xrefs);
 		processedEntry.xrefs = xrefs;
 
-		return new Response(JSON.stringify(processedEntry), {
+		console.log('🔍 [DictionaryAPI] 成功返回字典資料');
+		return new Response(JSON.stringify(processedEntry, null, 2), {
 			headers: {
 				'Content-Type': 'application/json',
 				...getCORSHeaders(),
@@ -63,7 +86,8 @@ export async function handleDictionaryAPI(url: URL, env: Env): Promise<Response>
 		});
 
 	} catch (error) {
-		console.error('Dictionary API error:', error);
+		console.error('🔍 [DictionaryAPI] 處理過程中發生錯誤:', error);
+		console.error('🔍 [DictionaryAPI] 錯誤堆疊:', error instanceof Error ? error.stack : 'No stack trace');
 
 		const errorResponse: ErrorResponse = {
 			error: 'Internal Server Error',
@@ -84,22 +108,55 @@ export async function handleDictionaryAPI(url: URL, env: Env): Promise<Response>
  * 處理字典條目資料
  */
 async function processDictionaryEntry(entry: DictionaryEntry, lang: DictionaryLang, env: Env): Promise<DictionaryAPIResponse> {
-	// 使用 decodeLangPart 處理字典資料
-	const processedEntry = decodeLangPart(lang, JSON.stringify(entry));
-	const parsedEntry = JSON.parse(processedEntry);
+	console.log('🔍 [ProcessDictionaryEntry] 開始處理字典條目，lang:', lang);
+	console.log('🔍 [ProcessDictionaryEntry] 原始條目資料:', JSON.stringify(entry, null, 2));
 
-	return {
-		id: parsedEntry.title,
-		type: 'term',
-		title: parsedEntry.title,
-		english: parsedEntry.english,
-		heteronyms: parsedEntry.heteronyms,
-		radical: parsedEntry.radical,
+	// 使用 decodeLangPart 處理字典資料
+	let processedEntry = decodeLangPart(lang, JSON.stringify(entry));
+	console.log('🔍 [ProcessDictionaryEntry] decodeLangPart 處理後:', processedEntry);
+
+	// 添加 JSON 解析前的檢查
+	try {
+		// 檢查 JSON 語法
+		const testParse = JSON.parse(processedEntry);
+		console.log('🔍 [ProcessDictionaryEntry] JSON 解析成功');
+	} catch (jsonError) {
+		console.error('🔍 [ProcessDictionaryEntry] JSON 解析失敗:', jsonError);
+		console.error('🔍 [ProcessDictionaryEntry] 問題 JSON 片段:', processedEntry.substring(170, 190));
+		// 嘗試修復常見的 JSON 問題
+		let fixedEntry = processedEntry;
+		// 修復可能的引號問題
+		fixedEntry = fixedEntry.replace(/\\"/g, '"');
+		// 修復可能的未轉義引號
+		fixedEntry = fixedEntry.replace(/([^\\])"/g, '$1\\"');
+		console.log('🔍 [ProcessDictionaryEntry] 嘗試修復後的 JSON');
+		try {
+			const testParse2 = JSON.parse(fixedEntry);
+			console.log('🔍 [ProcessDictionaryEntry] 修復後 JSON 解析成功');
+			processedEntry = fixedEntry;
+		} catch (jsonError2) {
+			console.error('🔍 [ProcessDictionaryEntry] 修復後仍然失敗:', jsonError2);
+			throw jsonError;
+		}
+	}
+
+	const parsedEntry = JSON.parse(processedEntry);
+	console.log('🔍 [ProcessDictionaryEntry] JSON 解析後:', parsedEntry);
+
+	const result = {
+		Deutsch: parsedEntry.Deutsch,
+		English: parsedEntry.English || parsedEntry.english,
 		stroke_count: parsedEntry.stroke_count,
+		francais: parsedEntry.francais,
+		heteronyms: parsedEntry.heteronyms,
 		non_radical_stroke_count: parsedEntry.non_radical_stroke_count,
-		pinyin: parsedEntry.pinyin,
+		radical: parsedEntry.radical,
+		title: parsedEntry.title,
 		translation: parsedEntry.translation,
 	};
+
+	console.log('🔍 [ProcessDictionaryEntry] 最終處理結果:', result);
+	return result;
 }
 
 /**
@@ -107,12 +164,16 @@ async function processDictionaryEntry(entry: DictionaryEntry, lang: DictionaryLa
  * 複製原本 moedict-webkit 的 decodeLangPart 函數邏輯
  */
 function decodeLangPart(langOrH: DictionaryLang | string, part: string = ''): string {
+	console.log('🔍 [DecodeLangPart] 開始處理，langOrH:', langOrH, 'part 長度:', part.length);
+
 	// 處理特殊字符替換
 	while (part.match(/"`辨~\u20DE&nbsp`似~\u20DE"[^}]*},{"f":"([^（]+)[^"]*"/)) {
 		part = part.replace(/"`辨~\u20DE&nbsp`似~\u20DE"[^}]*},{"f":"([^（]+)[^"]*"/, '"辨\u20DE 似\u20DE $1"');
+		console.log('🔍 [DecodeLangPart] 處理辨似字符替換');
 	}
 
 	part = part.replace(/"`(.)~\u20DE"[^}]*},{"f":"([^（]+)[^"]*"/g, '"$1\u20DE $2"');
+	console.log('🔍 [DecodeLangPart] 處理特殊字符替換後');
 
 	// 鍵值映射
 	const keyMap: Record<string, string> = {
@@ -143,30 +204,37 @@ function decodeLangPart(langOrH: DictionaryLang | string, part: string = ''): st
 
 	// 替換縮寫鍵名
 	part = part.replace(/"([hbpdcnftrelsaqETAVCDS_=])":/g, (match, k) => `"${keyMap[k]}":`);
+	console.log('🔍 [DecodeLangPart] 替換縮寫鍵名後');
 
-	// 處理語言特定的 hash
+	// 處理語言特定的 hash - 修正為正確的格式
 	const HASH_OF: Record<string, string> = { a: '#', t: "#'", h: '#:', c: '#~' };
-	const H = `#DotSlash${HASH_OF[langOrH] || langOrH}`;
+	const H = `./#${HASH_OF[langOrH] || '#'}`;
+	console.log('🔍 [DecodeLangPart] 語言 hash:', H);
 
-	// 處理連結和標點符號
+	// 處理連結和標點符號 - 修正引號轉義問題
 	part = part.replace(/([「【『（《])`([^~]+)~([。，、；：？！─…．·－」』》〉]+)/g, (match, pre, word, post) =>
-		`<span class="punct">${pre}<a href="${H}${word}">${word}</a>${post}</span>`
+		`<span class=\\"punct\\">${pre}<a href=\\"${H}${word}\\">${word}</a>${post}</span>`
 	);
 
 	part = part.replace(/([「【『（《])`([^~]+)~/g, (match, pre, word) =>
-		`<span class="punct">${pre}<a href="${H}${word}">${word}</a></span>`
+		`<span class=\\"punct\\">${pre}<a href=\\"${H}${word}\\">${word}</a></span>`
 	);
 
 	part = part.replace(/`([^~]+)~([。，、；：？！─…．·－」』》〉]+)/g, (match, word, post) =>
-		`<span class="punct"><a href="${H}${word}">${word}</a>${post}</span>`
+		`<span class=\\"punct\\"><a href=\\"${H}${word}\\">${word}</a>${post}</span>`
 	);
 
 	part = part.replace(/`([^~]+)~/g, (match, word) =>
-		`<a href="${H}${word}">${word}</a>`
+		`<a href=\\"${H}${word}\\">${word}</a>`
 	);
 
 	// 處理右括號
 	part = part.replace(/([)）])/g, '$1\u200B');
+
+	// 修正雙重 hash 問題 - 在最後修正
+	part = part.replace(/\.\/##/g, './#');
+
+	console.log('🔍 [DecodeLangPart] 處理完成，最終長度:', part.length);
 
 	return part;
 }
@@ -176,20 +244,30 @@ function decodeLangPart(langOrH: DictionaryLang | string, part: string = ''): st
  * 複製原本 moedict-webkit 的 xref-of 函數邏輯
  */
 async function getCrossReferences(text: string, lang: DictionaryLang, env: Env): Promise<Array<{ lang: DictionaryLang; words: string[] }>> {
+	console.log('🔍 [GetCrossReferences] 開始獲取跨語言對照，text:', text, 'lang:', lang);
+
 	try {
-		const xrefObject = await env.DICTIONARY.get(`${lang}/xref.json`);
+		const xrefPath = `${lang}/xref.json`;
+		console.log('🔍 [GetCrossReferences] 嘗試獲取 xref 檔案:', xrefPath);
+
+		const xrefObject = await env.DICTIONARY.get(xrefPath);
 
 		if (!xrefObject) {
+			console.log('🔍 [GetCrossReferences] 找不到 xref 檔案');
 			return [];
 		}
 
+		console.log('🔍 [GetCrossReferences] 成功獲取 xref 檔案');
 		const xrefData = await xrefObject.text();
 		const xref: XRefData = JSON.parse(xrefData);
+		console.log('🔍 [GetCrossReferences] xref 資料解析完成，語言數量:', Object.keys(xref).length);
+
 		const result: Array<{ lang: DictionaryLang; words: string[] }> = [];
 
 		// 檢查是否有跨語言對照
 		for (const [targetLang, words] of Object.entries(xref)) {
 			if (words[text]) {
+				console.log('🔍 [GetCrossReferences] 找到對照，目標語言:', targetLang);
 				// 處理逗號分隔的詞彙列表
 				const wordData = words[text];
 				let wordList: string[] = [];
@@ -201,6 +279,7 @@ async function getCrossReferences(text: string, lang: DictionaryLang, env: Env):
 				}
 
 				if (wordList.length > 0) {
+					console.log('🔍 [GetCrossReferences] 添加對照結果:', targetLang, wordList);
 					result.push({
 						lang: targetLang as DictionaryLang,
 						words: wordList
@@ -209,10 +288,11 @@ async function getCrossReferences(text: string, lang: DictionaryLang, env: Env):
 			}
 		}
 
+		console.log('🔍 [GetCrossReferences] 最終結果數量:', result.length);
 		return result;
 
 	} catch (error) {
-		console.error('Cross reference error:', error);
+		console.error('🔍 [GetCrossReferences] 處理過程中發生錯誤:', error);
 		return [];
 	}
 }
@@ -222,6 +302,8 @@ async function getCrossReferences(text: string, lang: DictionaryLang, env: Env):
  * 由於原專案沒有 lenToRegex.json，改為簡單的字符分割搜尋
  */
 async function performFuzzySearch(text: string, lang: DictionaryLang, env: Env): Promise<string[]> {
+	console.log('🔍 [PerformFuzzySearch] 開始模糊搜尋，text:', text, 'lang:', lang);
+
 	try {
 		// 簡單的字符分割搜尋
 		// 將輸入文字分割成單個字符，作為搜尋候選
@@ -229,6 +311,7 @@ async function performFuzzySearch(text: string, lang: DictionaryLang, env: Env):
 
 		// 清理文字，移除特殊字符
 		const cleanText = text.replace(/[`~]/g, '');
+		console.log('🔍 [PerformFuzzySearch] 清理後文字:', cleanText);
 
 		// 將每個字符作為搜尋候選
 		for (let i = 0; i < cleanText.length; i++) {
@@ -243,10 +326,11 @@ async function performFuzzySearch(text: string, lang: DictionaryLang, env: Env):
 			terms.push(cleanText);
 		}
 
+		console.log('🔍 [PerformFuzzySearch] 搜尋候選詞:', terms);
 		return terms;
 
 	} catch (error) {
-		console.error('Fuzzy search error:', error);
+		console.error('🔍 [PerformFuzzySearch] 處理過程中發生錯誤:', error);
 		return [];
 	}
 }
@@ -256,25 +340,34 @@ async function performFuzzySearch(text: string, lang: DictionaryLang, env: Env):
  * 對應原本的 def-of 函數
  */
 export async function getDefinition(lang: DictionaryLang, title: string, env: Env): Promise<string> {
+	console.log('🔍 [GetDefinition] 開始獲取定義，lang:', lang, 'title:', title);
+
 	try {
 		// 先嘗試單字格式 (@字.json)
-		let dataObject = await env.DICTIONARY.get(`${lang}/@${title}.json`);
+		const singleCharPath = `${lang}/@${title}.json`;
+		console.log('🔍 [GetDefinition] 嘗試單字格式:', singleCharPath);
+		let dataObject = await env.DICTIONARY.get(singleCharPath);
 
 		// 如果找不到單字，嘗試複合詞格式 (=詞.json)
 		if (!dataObject) {
-			dataObject = await env.DICTIONARY.get(`${lang}/=${title}.json`);
+			const compoundPath = `${lang}/=${title}.json`;
+			console.log('🔍 [GetDefinition] 嘗試複合詞格式:', compoundPath);
+			dataObject = await env.DICTIONARY.get(compoundPath);
 		}
 
 		if (!dataObject) {
+			console.log('🔍 [GetDefinition] 找不到對應的字典檔案');
 			return '';
 		}
 
+		console.log('🔍 [GetDefinition] 成功獲取字典檔案');
 		const data = await dataObject.text();
 		const payload = JSON.parse(data);
 		let def = '';
 
 		// 處理定義資料
 		if (payload.h && Array.isArray(payload.h)) {
+			console.log('🔍 [GetDefinition] 處理異體字資料，數量:', payload.h.length);
 			for (const h of payload.h) {
 				if (h.d && Array.isArray(h.d)) {
 					for (const d of h.d) {
@@ -285,10 +378,12 @@ export async function getDefinition(lang: DictionaryLang, title: string, env: En
 		}
 
 		// 清理定義文字
-		return def.replace(/[`~]/g, '');
+		const cleanedDef = def.replace(/[`~]/g, '');
+		console.log('🔍 [GetDefinition] 最終定義長度:', cleanedDef.length);
+		return cleanedDef;
 
 	} catch (error) {
-		console.error('Get definition error:', error);
+		console.error('🔍 [GetDefinition] 處理過程中發生錯誤:', error);
 		return '';
 	}
 }
