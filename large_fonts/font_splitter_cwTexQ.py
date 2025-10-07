@@ -10,7 +10,7 @@ with open("../word_list/word_list.json", "r", encoding="utf-8") as f:
 
 print(f"載入了 {len(moedict_words)} 個萌典單字")
 
-foldername = "cwTeXQYuan-Medium"
+foldername = "cwTeXQFangsong-Medium"
 font = TTFont(foldername + ".ttf")
 glyph_set = font.getGlyphSet()
 cmap = {cp:gn for table in font["cmap"].tables for cp,gn in table.cmap.items()}
@@ -19,7 +19,7 @@ UPM = font["head"].unitsPerEm
 ASC = font["hhea"].ascent
 
 # Output folder 設定
-fontname = "cwTeXQYuan"
+fontname = "cwTeXQFangsong"
 output_folder = fontname
 os.makedirs(output_folder, exist_ok=True)
 
@@ -44,7 +44,10 @@ for cp in target_cps:
     elif foldername == "cwTeXQYuan-Medium" and cp in [0xFF59, 0xFF47, 0xFF50, 0xFF51]:  # 全形 y, g, p, q
         OFFSET = 240
         print(f"特殊處理字符 {chr(cp)} (U+{cp:04X}): OFFSET = {OFFSET}")
-    elif foldername == "cwTeXQYuanZH-Medium" and cp in [0xFF59, 0xFF47, 0xFF50, 0xFF51]:  # 全形 y, g, p, q
+    elif foldername == "cwTeXQKai-Medium" and cp in [0xFF59, 0xFF47, 0xFF50, 0xFF51, 0x002C, 0x003B]:  # 全形 y, g, p, q, ",", ";"
+        OFFSET = 240
+        print(f"特殊處理字符 {chr(cp)} (U+{cp:04X}): OFFSET = {OFFSET}")
+    elif foldername == "cwTeXQFangsong-Medium" and cp in [0xFF59, 0xFF47, 0xFF50, 0xFF51, 0x002C, 0x003B]:  # 全形 y, g, p, q, ",", ";"
         OFFSET = 240
         print(f"特殊處理字符 {chr(cp)} (U+{cp:04X}): OFFSET = {OFFSET}")
     else:
