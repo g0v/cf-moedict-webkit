@@ -1,6 +1,13 @@
 #!/bin/bash
 
 	folders=(
+		"./large_fonts/cwTeXQMing"
+		"./large_fonts/cwTeXQHei"
+		"./large_fonts/cwTeXQKai"
+		"./large_fonts/cwTeXQYuan"
+		"./large_fonts/cwTeXQFangsong"
+
+
 		# "./large_fonts/HanWangShinSuMedium"
 		# "./large_HanWangFangSongMedium"
 		# "./large_fonts/HanWangLiSuMedium"
