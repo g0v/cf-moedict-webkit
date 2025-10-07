@@ -4,6 +4,7 @@ import { handleImageGeneration, generateTextSVGWithR2Fonts } from './image-gener
 import { handlePageRequest } from './page-rendering';
 import { handleStaticAssets } from './static-assets';
 import { Resvg } from '@cf-wasm/resvg';
+import { handleSubRouteAPI } from './sub-routes.js';
 
 /**
  * CloudFlare Worker 主要處理函數
@@ -21,6 +22,10 @@ export default {
 
 			// 路由處理
 			if (url.pathname.endsWith('.json')) {
+				// 檢查是否為子路由格式 /a/, /t/, /h/, /c/, /raw/, /uni/, /pua/
+				if (url.pathname.match(/^\/(a|t|h|c|raw|uni|pua)\//)) {
+					return await handleSubRouteAPI(url, env);
+				}
 				return await handleDictionaryAPI(url, env);
 			}
 
