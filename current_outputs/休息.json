@@ -28,7 +28,8 @@
           ]
         }
       ],
-      "pinyin": "xiū xí"
+      "pinyin": "xiū xí",
+      "bopomofo2": "shiou shiō"
     }
   ],
   "title": "<a href=\"./#休\">休</a><a href=\"./#息\">息</a>",
@@ -44,23 +45,5 @@
     "francais": [
       "se reposer"
     ]
-  },
-  "xrefs": [
-    {
-      "lang": "t",
-      "words": [
-        "歇",
-        "歇工",
-        "歇睏",
-        "停跤",
-        "停睏"
-      ]
-    },
-    {
-      "lang": "h",
-      "words": [
-        "歇睏"
-      ]
-    }
-  ]
+  }
 }
