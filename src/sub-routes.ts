@@ -87,6 +87,69 @@ async function handleLanguageRoute(lang: DictionaryLang, text: string, env: Env)
 	console.log('🔍 [LanguageRoute] 處理語言路由，lang:', lang, 'text:', text);
 
 	try {
+		// 檢查是否為部首查詢（@開頭）或列表查詢（=開頭）
+		// 這些查詢不使用 bucket 機制，直接從 R2 讀取
+		// 子路由返回壓縮格式（不斷行），根路由返回格式化輸出
+		if (text.startsWith('@')) {
+			console.log('🔍 [LanguageRoute] 部首查詢，直接讀取檔案');
+			const filePath = `${lang}/${text}.json`;
+			const fileObject = await env.DICTIONARY.get(filePath);
+
+			if (!fileObject) {
+				const errorResponse: ErrorResponse = {
+					error: 'Not Found',
+					message: `找不到部首: ${text}`,
+					terms: []
+				};
+				return new Response(JSON.stringify(errorResponse), {
+					status: 404,
+					headers: {
+						'Content-Type': 'application/json',
+						...getCORSHeaders(),
+					},
+				});
+			}
+
+			const fileData = await fileObject.text();
+			// 子路由返回壓縮格式（不斷行排版）
+			return new Response(JSON.stringify(JSON.parse(fileData)), {
+				headers: {
+					'Content-Type': 'application/json',
+					...getCORSHeaders(),
+				},
+			});
+		}
+
+		if (text.startsWith('=')) {
+			console.log('🔍 [LanguageRoute] 列表查詢，直接讀取檔案');
+			const filePath = `${lang}/${text}.json`;
+			const fileObject = await env.DICTIONARY.get(filePath);
+
+			if (!fileObject) {
+				const errorResponse: ErrorResponse = {
+					error: 'Not Found',
+					message: `找不到列表: ${text}`,
+					terms: []
+				};
+				return new Response(JSON.stringify(errorResponse), {
+					status: 404,
+					headers: {
+						'Content-Type': 'application/json',
+						...getCORSHeaders(),
+					},
+				});
+			}
+
+			const fileData = await fileObject.text();
+			// 子路由返回壓縮格式（不斷行排版）
+			return new Response(JSON.stringify(JSON.parse(fileData)), {
+				headers: {
+					'Content-Type': 'application/json',
+					...getCORSHeaders(),
+				},
+			});
+		}
+
 		// 使用 bucket 機制查詢字典資料
 		const bucket = bucketOf(text, lang);
 		console.log('🔍 [LanguageRoute] 計算出的 bucket:', bucket);

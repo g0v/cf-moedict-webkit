@@ -18,6 +18,18 @@ export async function handleDictionaryAPI(url: URL, env: Env): Promise<Response>
 	console.log('🔍 [DictionaryAPI] 修復後文字:', fixedText);
 
 	try {
+		// 檢查是否為部首查詢（@開頭）
+		if (fixedText.startsWith('@')) {
+			console.log('🔍 [DictionaryAPI] 部首查詢:', fixedText);
+			return await handleRadicalLookup(fixedText, lang, env);
+		}
+
+		// 檢查是否為列表查詢（=開頭）
+		if (fixedText.startsWith('=')) {
+			console.log('🔍 [DictionaryAPI] 列表查詢:', fixedText);
+			return await handleListLookup(fixedText, lang, env);
+		}
+
 		// 使用 bucket 機制查詢字典資料
 		const bucket = bucketOf(fixedText, lang);
 		console.log('🔍 [DictionaryAPI] 計算出的 bucket:', bucket);
@@ -92,6 +104,126 @@ export async function handleDictionaryAPI(url: URL, env: Env): Promise<Response>
 		const errorResponse: ErrorResponse = {
 			error: 'Internal Server Error',
 			message: error instanceof Error ? error.message : 'Failed to process dictionary request'
+		};
+
+		return new Response(JSON.stringify(errorResponse), {
+			status: 500,
+			headers: {
+				'Content-Type': 'application/json',
+				...getCORSHeaders(),
+			},
+		});
+	}
+}
+
+/**
+ * 處理部首查詢
+ * @開頭的查詢會直接從 R2 讀取部首資料
+ */
+async function handleRadicalLookup(text: string, lang: DictionaryLang, env: Env): Promise<Response> {
+	console.log('🔍 [HandleRadicalLookup] 開始處理部首查詢:', text, 'lang:', lang);
+
+	try {
+		// 部首檔案路徑：lang/@字.json
+		const radicalPath = `${lang}/${text}.json`;
+		console.log('🔍 [HandleRadicalLookup] 嘗試讀取部首檔案:', radicalPath);
+
+		const radicalObject = await env.DICTIONARY.get(radicalPath);
+
+		if (!radicalObject) {
+			console.log('🔍 [HandleRadicalLookup] 找不到部首檔案');
+			const errorResponse: ErrorResponse = {
+				error: 'Not Found',
+				message: `找不到部首: ${text}`,
+				terms: []
+			};
+
+			return new Response(JSON.stringify(errorResponse), {
+				status: 404,
+				headers: {
+					'Content-Type': 'application/json',
+					...getCORSHeaders(),
+				},
+			});
+		}
+
+		console.log('🔍 [HandleRadicalLookup] 成功讀取部首檔案');
+		const radicalData = await radicalObject.text();
+
+		// 直接返回部首資料，格式化輸出
+		console.log('🔍 [HandleRadicalLookup] 返回部首資料');
+		return new Response(JSON.stringify(JSON.parse(radicalData), null, 2), {
+			headers: {
+				'Content-Type': 'application/json',
+				...getCORSHeaders(),
+			},
+		});
+
+	} catch (error) {
+		console.error('🔍 [HandleRadicalLookup] 處理過程中發生錯誤:', error);
+		const errorResponse: ErrorResponse = {
+			error: 'Internal Server Error',
+			message: error instanceof Error ? error.message : 'Failed to process radical lookup'
+		};
+
+		return new Response(JSON.stringify(errorResponse), {
+			status: 500,
+			headers: {
+				'Content-Type': 'application/json',
+				...getCORSHeaders(),
+			},
+		});
+	}
+}
+
+/**
+ * 處理列表查詢
+ * =開頭的查詢會直接從 R2 讀取列表資料（一維數組）
+ */
+async function handleListLookup(text: string, lang: DictionaryLang, env: Env): Promise<Response> {
+	console.log('🔍 [HandleListLookup] 開始處理列表查詢:', text, 'lang:', lang);
+
+	try {
+		// 列表檔案路徑：lang/=名稱.json
+		const listPath = `${lang}/${text}.json`;
+		console.log('🔍 [HandleListLookup] 嘗試讀取列表檔案:', listPath);
+
+		const listObject = await env.DICTIONARY.get(listPath);
+
+		if (!listObject) {
+			console.log('🔍 [HandleListLookup] 找不到列表檔案');
+			const errorResponse: ErrorResponse = {
+				error: 'Not Found',
+				message: `找不到列表: ${text}`,
+				terms: []
+			};
+
+			return new Response(JSON.stringify(errorResponse), {
+				status: 404,
+				headers: {
+					'Content-Type': 'application/json',
+					...getCORSHeaders(),
+				},
+			});
+		}
+
+		console.log('🔍 [HandleListLookup] 成功讀取列表檔案');
+		const listData = await listObject.text();
+
+		// 直接返回列表資料，格式化輸出
+		console.log('🔍 [HandleListLookup] 返回列表資料');
+		return new Response(JSON.stringify(JSON.parse(listData), null, 2), {
+			headers: {
+				'Content-Type': 'application/json',
+				...getCORSHeaders(),
+			},
+		});
+
+	} catch (error) {
+		console.error('🔍 [HandleListLookup] 處理過程中發生錯誤:', error);
+		const errorResponse: ErrorResponse = {
+			error: 'Internal Server Error',
+			message: error instanceof Error ? error.message : 'Failed to process list lookup'
 		};
 
 		return new Response(JSON.stringify(errorResponse), {
