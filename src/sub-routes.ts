@@ -1,6 +1,7 @@
 import { Env, DictionaryLang, ErrorResponse } from './types';
 import { parseTextFromUrl, fixMojibake, getCORSHeaders } from './index';
 import { bucketOf, fillBucket } from './dictionary_tools';
+import { PUA_TO_IDS_MAP } from './pua-to-ids-mapping';
 
 /**
  * 處理子路由 API 請求
@@ -208,7 +209,7 @@ async function handleUniRoute(text: string, env: Env): Promise<Response> {
 		const uniData = convertToUniFormat(bucketResult.data);
 		console.log('🔍 [UniRoute] 返回 uni 格式資料');
 
-		return new Response(JSON.stringify(uniData), {
+		return new Response(JSON.stringify(uniData, null, 2), {
 			headers: {
 				'Content-Type': 'application/json',
 				...getCORSHeaders(),
@@ -391,6 +392,39 @@ function cleanRawData(data: any): any {
 
 	const result = cleanObject(data);
 	console.log('🔍 [CleanRawData] 清理完成');
+	return result;
+}
+
+/**
+ * 將 PUA 字符轉換為 IDS（表意文字描述序列）
+ */
+function convertPuaToIDS(data: any): any {
+	console.log('🔍 [ConvertPuaToIDS] 開始轉換 PUA 字符為 IDS');
+
+	function convertObject(obj: any): any {
+		if (Array.isArray(obj)) {
+			return obj.map(convertObject);
+		} else if (obj && typeof obj === 'object') {
+			const converted: any = {};
+			for (const [key, value] of Object.entries(obj)) {
+				converted[key] = convertObject(value);
+			}
+			return converted;
+		} else if (typeof obj === 'string') {
+			let result = obj;
+
+			// 使用導入的映射表轉換 PUA 字符
+			for (const [pua, ids] of Object.entries(PUA_TO_IDS_MAP)) {
+				result = result.replace(new RegExp(pua, 'g'), ids);
+			}
+
+			return result;
+		}
+		return obj;
+	}
+
+	const result = convertObject(data);
+	console.log('🔍 [ConvertPuaToIDS] 轉換完成');
 	return result;
 }
 
@@ -678,37 +712,22 @@ function convertToUniFormat(data: any): any {
 	const cleanedData = cleanRawData(convertedData);
 	console.log('🔍 [ConvertToUniFormat] 清理完成');
 
-	// 處理造字碼轉換為 Unicode 字元
-	const jsonString = JSON.stringify(cleanedData);
-	let processedString = jsonString;
+	// 將 PUA 字符轉換為 IDS（表意文字描述序列）
+	const withIDS = convertPuaToIDS(cleanedData);
+	console.log('🔍 [ConvertToUniFormat] PUA 轉 IDS 完成');
 
-	// 將造字碼轉換為對應的 Unicode 字元
-	processedString = processedString.replace(/\{\[9264\]\}/g, '灾');
-	processedString = processedString.replace(/\{\[9064\]\}/g, '从');
+	// 只保留需要的欄位，並調整順序
+	const finalResult = {
+		heteronyms: withIDS.heteronyms.map((heteronym: any) => {
+			// 移除 audio_id 欄位
+			const { audio_id, ...heteronymWithoutAudioId } = heteronym;
+			return heteronymWithoutAudioId;
+		}),
+		title: withIDS.title
+	};
 
-	// 處理其他可能的造字碼轉換
-	// 這裡可以根據需要添加更多的轉換規則
-
-	try {
-		const result = JSON.parse(processedString);
-
-		// 只保留需要的欄位，並調整順序
-		const finalResult = {
-			heteronyms: result.heteronyms.map((heteronym: any) => {
-				// 移除 audio_id 欄位
-				const { audio_id, ...heteronymWithoutAudioId } = heteronym;
-				return heteronymWithoutAudioId;
-			}),
-			title: result.title
-		};
-
-		console.log('🔍 [ConvertToUniFormat] 轉換完成');
-		return finalResult;
-
-	} catch (error) {
-		console.error('🔍 [ConvertToUniFormat] JSON 解析失敗，返回原始資料');
-		return data;
-	}
+	console.log('🔍 [ConvertToUniFormat] 轉換完成');
+	return finalResult;
 }
 
 /**
