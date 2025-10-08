@@ -254,7 +254,7 @@ async function handlePuaRoute(text: string, env: Env): Promise<Response> {
 		const puaData = convertToPuaFormat(bucketResult.data);
 		console.log('🔍 [PuaRoute] 返回 pua 格式資料');
 
-		return new Response(JSON.stringify(puaData), {
+		return new Response(JSON.stringify(puaData, null, 2), {
 			headers: {
 				'Content-Type': 'application/json',
 				...getCORSHeaders(),
