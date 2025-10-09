@@ -29,6 +29,14 @@ export default {
 				return await handleDictionaryAPI(url, env);
 			}
 
+			// 處理 /raw/, /uni/, /pua/ 開頭的路由，即使沒有 .json 結尾
+			if (url.pathname.match(/^\/(raw|uni|pua)\/.+/)) {
+				// 自動補上 .json 後交給 handleSubRouteAPI 處理
+				const modifiedUrl = new URL(request.url);
+				modifiedUrl.pathname = url.pathname + '.json';
+				return await handleSubRouteAPI(modifiedUrl, env);
+			}
+
 			if (url.pathname.endsWith('.png')) {
 				return await handleImageGeneration(url, env);
 			}
