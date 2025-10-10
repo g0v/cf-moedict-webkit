@@ -126,111 +126,120 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 	const title = TITLE_OF[lang];
 	const pageTitle = `${text} - ${title}萌典`;
 
+	// R2 公開端點
+	const R2_ENDPOINT = 'https://pub-1808868ac1e14b13abe9e2800cace884.r2.dev';
+
 	return `<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
 	<meta charset="utf-8">
 	<title>${escapeHtml(pageTitle)}</title>
-	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=IE9">
+
+	<!-- 原專案 CSS -->
+	<link rel="stylesheet" href="${R2_ENDPOINT}/styles.css">
+	<link rel="stylesheet" href="${R2_ENDPOINT}/css/cupertino/jquery-ui-1.10.4.custom.css">
+
+	<!-- 圖標和搜尋 -->
+	<link rel="apple-touch-icon" href="${R2_ENDPOINT}/images/icon.png">
+	<link rel="shortcut icon" type="image/x-icon" href="${R2_ENDPOINT}/favicon.ico">
+	<link rel="search" type="application/opensearchdescription+xml" href="${R2_ENDPOINT}/opensearch/moedict.xml" title="萌典華語">
+
+	<!-- 字體預載入 (直接從 R2 端點載入) -->
+	<link rel="preload" href="${R2_ENDPOINT}/fonts/fontawesome-webfont.woff" as="font" type="font/woff" crossorigin>
+	<link rel="preload" href="${R2_ENDPOINT}/fonts/MOEDICT.woff" as="font" type="font/woff" crossorigin>
+	<link rel="preload" href="${R2_ENDPOINT}/fonts/han.woff" as="font" type="font/woff" crossorigin>
+	<link rel="preload" href="${R2_ENDPOINT}/fonts/EBAS-Subset.woff" as="font" type="font/woff" crossorigin>
+	<link rel="preload" href="${R2_ENDPOINT}/fonts/FiraSansOT-Regular.woff" as="font" type="font/woff" crossorigin>
+
+	<!-- 自訂樣式 -->
 	<style>
-		body {
-			font-family: "Microsoft JhengHei", "微軟正黑體", sans-serif;
-			max-width: 800px;
+		/* 容器樣式 */
+		.dictionary-page {
+			max-width: 900px;
 			margin: 0 auto;
 			padding: 20px;
-			line-height: 1.8;
-			color: #333;
 		}
-		h1 {
-			color: #2c3e50;
-			border-bottom: 3px solid #3498db;
+
+		/* 標題樣式 */
+		.dictionary-page h1 {
+			margin-bottom: 30px;
 			padding-bottom: 15px;
-			margin-bottom: 25px;
-			font-size: 2em;
+			border-bottom: 2px solid #e0e0e0;
 		}
-		h1 a {
-			color: inherit;
-			text-decoration: none;
-		}
-		h3 {
-			color: #2c3e50;
-			margin-top: 25px;
-			margin-bottom: 15px;
-			border-bottom: 1px solid #ddd;
-			padding-bottom: 8px;
-		}
+
+		/* 異音字區塊 */
 		.heteronym {
 			margin: 25px 0;
 			padding: 20px;
 			background: #f8f9fa;
-			border-left: 5px solid #3498db;
+			border-left: 4px solid #007bff;
 			border-radius: 4px;
 		}
+
+		/* 注音拼音 */
 		.phonetic {
 			margin-bottom: 15px;
 			font-size: 1.1em;
 		}
 		.bopomofo {
-			color: #e74c3c;
+			color: #dc3545;
 			margin-right: 15px;
 			font-weight: bold;
 		}
 		.pinyin {
-			color: #16a085;
+			color: #28a745;
 			font-style: italic;
 		}
+
+		/* 定義列表 */
 		.definitions {
 			margin-top: 15px;
-			padding-left: 25px;
 		}
 		.definitions li {
 			margin: 15px 0;
+			line-height: 1.8;
 		}
-		.def {
-			margin-bottom: 10px;
-		}
-		.def a {
-			color: #3498db;
-			text-decoration: none;
-		}
-		.def a:hover {
-			text-decoration: underline;
-		}
+
+		/* 例句和引文 */
 		.example, .quote {
-			margin: 8px 0;
-			padding: 10px;
+			margin: 10px 0;
+			padding: 12px;
 			background: #fff;
-			border-left: 3px solid #95a5a6;
-			font-size: 0.95em;
+			border-left: 3px solid #6c757d;
 			color: #555;
 		}
+
+		/* 同義詞、反義詞 */
 		.synonyms, .antonyms {
 			margin-top: 10px;
-			padding: 8px;
-			background: #ecf0f1;
-			border-radius: 3px;
-			font-size: 0.9em;
-		}
-		.synonyms strong, .antonyms strong {
-			color: #2c3e50;
-		}
-		.translations, .xrefs {
-			margin: 25px 0;
-			padding: 15px;
-			background: #fff;
-			border: 1px solid #ddd;
+			padding: 8px 12px;
+			background: #e9ecef;
 			border-radius: 4px;
+			font-size: 0.95em;
+		}
+
+		/* 翻譯區塊 */
+		.translations, .xrefs {
+			margin: 30px 0;
+			padding: 20px;
+			background: #f8f9fa;
+			border: 1px solid #dee2e6;
+			border-radius: 4px;
+		}
+		.translations h3, .xrefs h3 {
+			margin-top: 0;
+			margin-bottom: 15px;
+			color: #495057;
+			font-size: 1.2em;
 		}
 		.translation-item, .xref-item {
 			margin: 10px 0;
-			padding: 8px;
-			background: #f8f9fa;
-			border-radius: 3px;
+			padding: 8px 0;
 		}
-		.translation-item strong, .xref-item strong {
-			color: #2c3e50;
-			margin-right: 8px;
-		}
+
+		/* 搜尋結果 */
 		.search-results ul {
 			list-style: none;
 			padding: 0;
@@ -239,17 +248,15 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 			margin: 15px 0;
 			padding: 15px;
 			background: #f8f9fa;
-			border-radius: 5px;
-			border-left: 4px solid #3498db;
+			border-radius: 4px;
+			border-left: 4px solid #007bff;
 		}
-		.search-results strong {
-			color: #2c3e50;
-			font-size: 1.1em;
-		}
+
+		/* 找不到結果 */
 		.not-found {
 			text-align: center;
 			padding: 60px 20px;
-			color: #7f8c8d;
+			color: #6c757d;
 		}
 		.not-found h1 {
 			border: none;
@@ -258,6 +265,23 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 </head>
 <body>
 	${bodyHTML}
+
+	<!-- 原專案 JavaScript -->
+	<script src="${R2_ENDPOINT}/js/es5-shim.js" charset="utf-8"></script>
+	<script src="${R2_ENDPOINT}/js/es5-sham.js" charset="utf-8"></script>
+	<script src="${R2_ENDPOINT}/js/deps.js" charset="utf-8"></script>
+
+	<!-- Facebook SDK -->
+	<div id="fb-root"></div>
+	<script>
+		(function(d, s, id) {
+		var js, fjs = d.getElementsByTagName(s)[0];
+		if (d.getElementById(id)) return;
+		js = d.createElement(s); js.id = id;
+		js.src = "//connect.facebook.net/zh_TW/sdk.js#xfbml=1&version=v2.3&appId=252470654795525";
+		fjs.parentNode.insertBefore(js, fjs);
+		}(document, 'script', 'facebook-jssdk'));
+	</script>
 </body>
 </html>`;
 }
