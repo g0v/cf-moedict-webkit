@@ -45,8 +45,8 @@ export default {
 				return await handlePageRequest(url, env);
 			}
 
-			// 靜態資源處理
-			if (url.pathname.match(/\.(css|js|ico|png|jpg|jpeg|gif|svg|woff|woff2|ttf|otf)$/)) {
+			// 靜態資源處理 (排除字體檔案，字體直接從 R2 端點載入)
+			if (url.pathname.match(/\.(css|js|ico|png|jpg|jpeg|gif|svg)$/)) {
 				return await handleStaticAssets(url, env);
 			}
 
