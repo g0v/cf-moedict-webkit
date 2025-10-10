@@ -30,19 +30,11 @@ export async function handleDictionaryAPI(url: URL, env: Env): Promise<Response>
 			return await handleListLookup(fixedText, lang, env);
 		}
 
-		// 使用 bucket 機制查詢字典資料
-		const bucket = bucketOf(fixedText, lang);
-		console.log('🔍 [DictionaryAPI] 計算出的 bucket:', bucket);
+		// 使用統一的查詢函數
+		const processedEntry = await lookupDictionaryEntry(fixedText, lang, env);
 
-		const bucketResult = await fillBucket(fixedText, bucket, lang, env);
-		console.log('🔍 [DictionaryAPI] Bucket 查詢結果:', {
-			hasData: !!bucketResult.data,
-			hasError: bucketResult.err,
-			bsCount: bucketResult.bs?.length || 0
-		});
-
-		if (bucketResult.err || !bucketResult.data) {
-			console.log('🔍 [DictionaryAPI] Bucket 查詢失敗，開始模糊搜尋');
+		if (!processedEntry) {
+			console.log('🔍 [DictionaryAPI] 查詢失敗，開始模糊搜尋');
 			// 如果找不到確切匹配，嘗試模糊搜尋
 			const searchResult = await performFuzzySearch(fixedText, lang, env);
 			console.log('🔍 [DictionaryAPI] 模糊搜尋結果:', searchResult);
@@ -74,20 +66,6 @@ export async function handleDictionaryAPI(url: URL, env: Env): Promise<Response>
 				},
 			});
 		}
-
-		// 使用從 bucket 獲取的資料
-		const entry: DictionaryEntry = bucketResult.data;
-		console.log('🔍 [DictionaryAPI] 開始處理字典條目資料');
-
-		// 處理字典資料
-		const processedEntry = await processDictionaryEntry(entry, lang, env);
-		console.log('🔍 [DictionaryAPI] 字典條目處理完成，標題:', processedEntry.title);
-
-		// 添加跨語言對照
-		console.log('🔍 [DictionaryAPI] 開始獲取跨語言對照');
-		const xrefs = await getCrossReferences(fixedText, lang, env);
-		console.log('🔍 [DictionaryAPI] 跨語言對照結果:', xrefs);
-		processedEntry.xrefs = xrefs;
 
 		console.log('🔍 [DictionaryAPI] 成功返回字典資料');
 		return new Response(JSON.stringify(processedEntry, null, 2), {
@@ -233,6 +211,56 @@ async function handleListLookup(text: string, lang: DictionaryLang, env: Env): P
 				...getCORSHeaders(),
 			},
 		});
+	}
+}
+
+/**
+ * 查詢字典條目（核心邏輯）
+ * 供內部和頁面渲染使用
+ */
+export async function lookupDictionaryEntry(text: string, lang: DictionaryLang, env: Env): Promise<DictionaryAPIResponse | null> {
+	console.log('🔍 [LookupDictionaryEntry] 開始查詢，text:', text, 'lang:', lang);
+
+	try {
+		// 檢查是否為部首或列表查詢
+		if (text.startsWith('@') || text.startsWith('=')) {
+			console.log('🔍 [LookupDictionaryEntry] 特殊查詢類型，不處理');
+			return null;
+		}
+
+		// 使用 bucket 機制查詢字典資料
+		const bucket = bucketOf(text, lang);
+		console.log('🔍 [LookupDictionaryEntry] 計算出的 bucket:', bucket);
+
+		const bucketResult = await fillBucket(text, bucket, lang, env);
+		console.log('🔍 [LookupDictionaryEntry] Bucket 查詢結果:', {
+			hasData: !!bucketResult.data,
+			hasError: bucketResult.err
+		});
+
+		if (bucketResult.err || !bucketResult.data) {
+			console.log('🔍 [LookupDictionaryEntry] Bucket 查詢失敗，返回 null');
+			return null;
+		}
+
+		// 使用從 bucket 獲取的資料
+		const entry: DictionaryEntry = bucketResult.data;
+		console.log('🔍 [LookupDictionaryEntry] 開始處理字典條目資料');
+
+		// 處理字典資料
+		const processedEntry = await processDictionaryEntry(entry, lang, env);
+		console.log('🔍 [LookupDictionaryEntry] 字典條目處理完成');
+
+		// 添加跨語言對照
+		const xrefs = await getCrossReferences(text, lang, env);
+		processedEntry.xrefs = xrefs;
+
+		console.log('🔍 [LookupDictionaryEntry] 成功返回處理後的資料');
+		return processedEntry;
+
+	} catch (error) {
+		console.error('🔍 [LookupDictionaryEntry] 處理過程中發生錯誤:', error);
+		return null;
 	}
 }
 
