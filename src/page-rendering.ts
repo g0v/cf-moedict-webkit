@@ -138,28 +138,98 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 			max-width: 800px;
 			margin: 0 auto;
 			padding: 20px;
-			line-height: 1.6;
+			line-height: 1.8;
+			color: #333;
 		}
 		h1 {
-			color: #333;
-			border-bottom: 2px solid #4a90e2;
-			padding-bottom: 10px;
+			color: #2c3e50;
+			border-bottom: 3px solid #3498db;
+			padding-bottom: 15px;
+			margin-bottom: 25px;
+			font-size: 2em;
+		}
+		h1 a {
+			color: inherit;
+			text-decoration: none;
+		}
+		h3 {
+			color: #2c3e50;
+			margin-top: 25px;
+			margin-bottom: 15px;
+			border-bottom: 1px solid #ddd;
+			padding-bottom: 8px;
 		}
 		.heteronym {
-			margin: 20px 0;
-			padding: 15px;
-			background: #f9f9f9;
-			border-left: 4px solid #4a90e2;
+			margin: 25px 0;
+			padding: 20px;
+			background: #f8f9fa;
+			border-left: 5px solid #3498db;
+			border-radius: 4px;
 		}
-		.bopomofo, .pinyin {
-			color: #666;
-			margin: 5px 0;
+		.phonetic {
+			margin-bottom: 15px;
+			font-size: 1.1em;
+		}
+		.bopomofo {
+			color: #e74c3c;
+			margin-right: 15px;
+			font-weight: bold;
+		}
+		.pinyin {
+			color: #16a085;
+			font-style: italic;
 		}
 		.definitions {
-			margin-top: 10px;
+			margin-top: 15px;
+			padding-left: 25px;
 		}
 		.definitions li {
+			margin: 15px 0;
+		}
+		.def {
+			margin-bottom: 10px;
+		}
+		.def a {
+			color: #3498db;
+			text-decoration: none;
+		}
+		.def a:hover {
+			text-decoration: underline;
+		}
+		.example, .quote {
+			margin: 8px 0;
+			padding: 10px;
+			background: #fff;
+			border-left: 3px solid #95a5a6;
+			font-size: 0.95em;
+			color: #555;
+		}
+		.synonyms, .antonyms {
+			margin-top: 10px;
+			padding: 8px;
+			background: #ecf0f1;
+			border-radius: 3px;
+			font-size: 0.9em;
+		}
+		.synonyms strong, .antonyms strong {
+			color: #2c3e50;
+		}
+		.translations, .xrefs {
+			margin: 25px 0;
+			padding: 15px;
+			background: #fff;
+			border: 1px solid #ddd;
+			border-radius: 4px;
+		}
+		.translation-item, .xref-item {
 			margin: 10px 0;
+			padding: 8px;
+			background: #f8f9fa;
+			border-radius: 3px;
+		}
+		.translation-item strong, .xref-item strong {
+			color: #2c3e50;
+			margin-right: 8px;
 		}
 		.search-results ul {
 			list-style: none;
@@ -167,14 +237,22 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 		}
 		.search-results li {
 			margin: 15px 0;
-			padding: 10px;
-			background: #f0f0f0;
+			padding: 15px;
+			background: #f8f9fa;
 			border-radius: 5px;
+			border-left: 4px solid #3498db;
+		}
+		.search-results strong {
+			color: #2c3e50;
+			font-size: 1.1em;
 		}
 		.not-found {
 			text-align: center;
-			padding: 40px 20px;
-			color: #666;
+			padding: 60px 20px;
+			color: #7f8c8d;
+		}
+		.not-found h1 {
+			border: none;
 		}
 	</style>
 </head>

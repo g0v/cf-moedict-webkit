@@ -7,15 +7,17 @@ import { bucketOf, fillBucket } from './dictionary_tools';
  * 對應原本的 @get '/:text.json' 路由
  */
 export async function handleDictionaryAPI(url: URL, env: Env): Promise<Response> {
+	// 過濾瀏覽器自動請求（Chrome DevTools 等）
+	if (url.pathname.includes('com.chrome.devtools') ||
+	    url.pathname.includes('.well-known')) {
+		return new Response('Not Found', { status: 404 });
+	}
+
 	console.log('🔍 [DictionaryAPI] 開始處理字典查詢請求');
-	console.log('🔍 [DictionaryAPI] URL:', url.href);
 	console.log('🔍 [DictionaryAPI] Pathname:', url.pathname);
 
 	const { text, lang, cleanText } = parseTextFromUrl(url.pathname);
-	console.log('🔍 [DictionaryAPI] 解析結果 - text:', text, 'lang:', lang, 'cleanText:', cleanText);
-
 	const fixedText = fixMojibake(cleanText);
-	console.log('🔍 [DictionaryAPI] 修復後文字:', fixedText);
 
 	try {
 		// 檢查是否為部首查詢（@開頭）
@@ -269,11 +271,9 @@ export async function lookupDictionaryEntry(text: string, lang: DictionaryLang, 
  */
 async function processDictionaryEntry(entry: DictionaryEntry, lang: DictionaryLang, env: Env): Promise<DictionaryAPIResponse> {
 	console.log('🔍 [ProcessDictionaryEntry] 開始處理字典條目，lang:', lang);
-	console.log('🔍 [ProcessDictionaryEntry] 原始條目資料:', JSON.stringify(entry, null, 2));
 
 	// 使用 decodeLangPart 處理字典資料
 	let processedEntry = decodeLangPart(lang, JSON.stringify(entry));
-	console.log('🔍 [ProcessDictionaryEntry] decodeLangPart 處理後:', processedEntry);
 
 	// 添加 JSON 解析前的檢查
 	try {
@@ -301,21 +301,20 @@ async function processDictionaryEntry(entry: DictionaryEntry, lang: DictionaryLa
 	}
 
 	const parsedEntry = JSON.parse(processedEntry);
-	console.log('🔍 [ProcessDictionaryEntry] JSON 解析後:', parsedEntry);
 
-	const result = {
-		Deutsch: parsedEntry.Deutsch,
-		English: parsedEntry.English || parsedEntry.english,
-		stroke_count: parsedEntry.stroke_count,
-		francais: parsedEntry.francais,
-		heteronyms: parsedEntry.heteronyms,
-		non_radical_stroke_count: parsedEntry.non_radical_stroke_count,
-		radical: parsedEntry.radical,
-		title: parsedEntry.title,
-		translation: parsedEntry.translation,
-	};
+	// 只包含實際存在的欄位
+	const result: any = {};
 
-	console.log('🔍 [ProcessDictionaryEntry] 最終處理結果:', result);
+	if (parsedEntry.Deutsch) result.Deutsch = parsedEntry.Deutsch;
+	if (parsedEntry.English || parsedEntry.english) result.English = parsedEntry.English || parsedEntry.english;
+	if (parsedEntry.francais) result.francais = parsedEntry.francais;
+	if (parsedEntry.heteronyms) result.heteronyms = parsedEntry.heteronyms;
+	if (parsedEntry.radical) result.radical = parsedEntry.radical;
+	if (parsedEntry.stroke_count) result.stroke_count = parsedEntry.stroke_count;
+	if (parsedEntry.non_radical_stroke_count) result.non_radical_stroke_count = parsedEntry.non_radical_stroke_count;
+	if (parsedEntry.title) result.title = parsedEntry.title;
+	if (parsedEntry.translation) result.translation = parsedEntry.translation;
+
 	return result;
 }
 
@@ -421,32 +420,23 @@ async function getCrossReferences(text: string, lang: DictionaryLang, env: Env):
 		const xrefData = await xrefObject.text();
 		const xref: XRefData = JSON.parse(xrefData);
 		console.log('🔍 [GetCrossReferences] xref 資料解析完成，語言數量:', Object.keys(xref).length);
-		console.log('🔍 [GetCrossReferences] xref 資料內容:', JSON.stringify(xref, null, 2));
 
 		const result: Array<{ lang: DictionaryLang; words: string[] }> = [];
 
 		// 檢查是否有跨語言對照
 		for (const [targetLang, words] of Object.entries(xref)) {
 			if (words[text]) {
-				console.log('🔍 [GetCrossReferences] 找到對照，目標語言:', targetLang);
-				console.log('🔍 [GetCrossReferences] 原始 wordData:', words[text]);
-
 				// 處理逗號分隔的詞彙列表
 				const wordData = words[text];
 				let wordList: string[] = [];
 
 				if (typeof wordData === 'string') {
-					console.log('🔍 [GetCrossReferences] 處理字串格式的 wordData');
 					wordList = wordData.split(',').map((w: string) => w.trim()).filter((w: string) => w.length > 0);
 				} else if (Array.isArray(wordData)) {
-					console.log('🔍 [GetCrossReferences] 處理陣列格式的 wordData');
 					wordList = wordData;
 				}
 
-				console.log('🔍 [GetCrossReferences] 處理後的 wordList:', wordList);
-
 				if (wordList.length > 0) {
-					console.log('🔍 [GetCrossReferences] 添加對照結果:', targetLang, wordList);
 					result.push({
 						lang: targetLang as DictionaryLang,
 						words: wordList

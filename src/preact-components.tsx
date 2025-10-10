@@ -19,32 +19,117 @@ interface DictionaryPageProps {
  */
 export function DictionaryPage(props: DictionaryPageProps) {
 	const { entry, text, lang } = props;
-	const { title, heteronyms = [] } = entry;
+	const { title, heteronyms = [], translation, xrefs = [] } = entry;
 
 	return (
 		<div className="dictionary-page">
-			<h1>{title || text}</h1>
+			{/* 標題 */}
+			<h1 dangerouslySetInnerHTML={{ __html: title || text }} />
 
+			{/* 異音字列表 */}
 			{heteronyms.map((het: any, idx: number) => (
 				<div key={idx} className="heteronym">
 					{/* 注音/拼音 */}
-					{het.bopomofo && <div className="bopomofo">{het.bopomofo}</div>}
-					{het.pinyin && <div className="pinyin">{het.pinyin}</div>}
+					<div className="phonetic">
+						{het.bopomofo && <span className="bopomofo">{het.bopomofo}</span>}
+						{het.pinyin && <span className="pinyin"> {het.pinyin}</span>}
+					</div>
 
 					{/* 定義列表 */}
 					{het.definitions && het.definitions.length > 0 && (
 						<ol className="definitions">
 							{het.definitions.map((def: any, defIdx: number) => (
 								<li key={defIdx}>
-									{def.def && <div dangerouslySetInnerHTML={{ __html: def.def }} />}
+									{/* 定義 */}
+									{def.def && <div className="def" dangerouslySetInnerHTML={{ __html: def.def }} />}
+
+									{/* 例句/引文 */}
+									{def.example && def.example.map((ex: string, exIdx: number) => (
+										<div key={exIdx} className="example" dangerouslySetInnerHTML={{ __html: ex }} />
+									))}
+									{def.quote && def.quote.map((q: string, qIdx: number) => (
+										<div key={qIdx} className="quote" dangerouslySetInnerHTML={{ __html: q }} />
+									))}
+
+									{/* 同義詞/反義詞 */}
+									{def.synonyms && (
+										<div className="synonyms">
+											<strong>似：</strong>
+											<span dangerouslySetInnerHTML={{ __html: def.synonyms }} />
+										</div>
+									)}
+									{def.antonyms && (
+										<div className="antonyms">
+											<strong>反：</strong>
+											<span dangerouslySetInnerHTML={{ __html: def.antonyms }} />
+										</div>
+									)}
 								</li>
 							))}
 						</ol>
 					)}
 				</div>
 			))}
+
+		{/* 翻譯 */}
+		{translation && (
+			<div className="translations">
+				<h3>翻譯</h3>
+				{translation.English && (
+					<div className="translation-item">
+						<strong>英：</strong> {formatTranslation(translation.English)}
+					</div>
+				)}
+				{translation.Deutsch && (
+					<div className="translation-item">
+						<strong>德：</strong> {formatTranslation(translation.Deutsch)}
+					</div>
+				)}
+				{translation.francais && (
+					<div className="translation-item">
+						<strong>法：</strong> {formatTranslation(translation.francais)}
+					</div>
+				)}
+			</div>
+		)}
+
+			{/* 跨語言對照 */}
+			{xrefs && xrefs.length > 0 && (
+				<div className="xrefs">
+					<h3>相關詞彙</h3>
+					{xrefs.map((xref: any, xrefIdx: number) => (
+						<div key={xrefIdx} className="xref-item">
+							<strong>{getLangName(xref.lang)}：</strong>
+							{xref.words.join('、')}
+						</div>
+					))}
+				</div>
+			)}
 		</div>
 	);
+}
+
+/**
+ * 獲取語言名稱
+ */
+function getLangName(lang: string): string {
+	const langNames: Record<string, string> = {
+		'a': '華語',
+		't': '台語',
+		'h': '客語',
+		'c': '兩岸'
+	};
+	return langNames[lang] || lang;
+}
+
+/**
+ * 格式化翻譯內容（處理字串或陣列）
+ */
+function formatTranslation(value: string | string[]): string {
+	if (Array.isArray(value)) {
+		return value.join(', ');
+	}
+	return value;
 }
 
 /**
