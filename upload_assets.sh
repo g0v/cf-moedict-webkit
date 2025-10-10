@@ -1,14 +1,14 @@
 #!/bin/bash
 
-# 安全上傳前端資產到 R2 Storage
-# 使用更保守的設置，避免 403 錯誤
+# 同步前端資產到 R2 Storage
+# 使用 rclone sync 確保完整同步，不會跳過已存在的檔案
 
 set -e  # 遇到錯誤時退出
 
 BUCKET="r2:moedict-assets-preview"
 ASSETS_DIR="./assets"
 
-echo "🚀 開始安全上傳前端資產到 R2..."
+echo "🚀 開始同步前端資產到 R2..."
 
 # 檢查 rclone 是否已配置
 if ! rclone listremotes | grep -q "^r2:"; then
@@ -23,93 +23,35 @@ if [ ! -d "$ASSETS_DIR" ]; then
     exit 1
 fi
 
-echo "📁 準備上傳資產目錄: $ASSETS_DIR"
+echo "📁 準備同步資產目錄: $ASSETS_DIR"
 
-# 保守的 rclone 設置
-RCLONE_OPTS="--progress --transfers=1 --checkers=2 --buffer-size=512K --retries=5 --low-level-retries=20 --retries-sleep=5s --timeout=300s"
+# rclone sync 設置
+RCLONE_OPTS="--progress --transfers=4 --checkers=8 --buffer-size=1M --retries=3 --low-level-retries=10 --retries-sleep=2s --timeout=300s --delete-excluded"
 
-# 上傳 CSS 文件
+# 顯示同步前的差異檢查（不因差異而中斷）
 echo ""
-echo "📤 上傳 CSS 文件..."
-if [ -d "$ASSETS_DIR/css" ]; then
-    for css_file in "$ASSETS_DIR/css"/*.css; do
-        if [ -f "$css_file" ]; then
-            filename=$(basename "$css_file")
-            echo "  上傳: $filename"
-            rclone copy "$css_file" "$BUCKET/css/" $RCLONE_OPTS
-        fi
-    done
-    echo "✅ CSS 文件上傳完成"
-else
-    echo "⚠️  CSS 目錄不存在，跳過"
-fi
-
-# 上傳主要 CSS
-if [ -f "$ASSETS_DIR/styles.css" ]; then
-    echo "📤 上傳 styles.css..."
-    rclone copy "$ASSETS_DIR/styles.css" "$BUCKET/" $RCLONE_OPTS
-    echo "✅ styles.css 上傳完成"
-else
-    echo "⚠️  styles.css 不存在，跳過"
-fi
-
-# 上傳 JavaScript 文件（逐個上傳）
-echo ""
-echo "📤 上傳 JavaScript 文件..."
-if [ -d "$ASSETS_DIR/js" ]; then
-    js_files=$(find "$ASSETS_DIR/js" -name "*.js" | wc -l)
-    echo "發現 $js_files 個 JS 文件"
-
-    for js_file in "$ASSETS_DIR/js"/*.js; do
-        if [ -f "$js_file" ]; then
-            filename=$(basename "$js_file")
-            echo "  上傳: $filename"
-            rclone copy "$js_file" "$BUCKET/js/" $RCLONE_OPTS
-        fi
-    done
-    echo "✅ JavaScript 文件上傳完成"
-else
-    echo "⚠️  JS 目錄不存在，跳過"
-fi
-
-# 上傳圖片文件
-echo ""
-echo "📤 上傳圖片文件..."
-if [ -d "$ASSETS_DIR/images" ]; then
-    for img_file in "$ASSETS_DIR/images"/*; do
-        if [ -f "$img_file" ]; then
-            filename=$(basename "$img_file")
-            echo "  上傳: $filename"
-            rclone copy "$img_file" "$BUCKET/images/" $RCLONE_OPTS
-        fi
-    done
-    echo "✅ 圖片文件上傳完成"
-else
-    echo "⚠️  圖片目錄不存在，跳過"
-fi
-
-# 上傳字體文件（如果有的話）
-if [ -d "$ASSETS_DIR/fonts" ]; then
-    echo ""
-    echo "📤 上傳字體文件..."
-    for font_file in "$ASSETS_DIR/fonts"/*; do
-        if [ -f "$font_file" ]; then
-            filename=$(basename "$font_file")
-            echo "  上傳: $filename"
-            rclone copy "$font_file" "$BUCKET/fonts/" $RCLONE_OPTS
-        fi
-    done
-    echo "✅ 字體文件上傳完成"
-else
-    echo "⚠️  字體目錄不存在，跳過"
-fi
+echo "🔍 檢查同步差異..."
+rclone check "$ASSETS_DIR/" "$BUCKET/" --one-way --missing-on-dst --max-backlog=200000 || true
 
 echo ""
-echo "🎉 資產上傳完成！"
+echo "📤 開始同步所有資產..."
+
+# 使用 rclone sync 同步整個 assets 目錄
+echo "同步中: $ASSETS_DIR/ -> $BUCKET/"
+rclone sync "$ASSETS_DIR/" "$BUCKET/" $RCLONE_OPTS
+
 echo ""
-echo "📊 上傳摘要:"
-echo "查看上傳的文件："
+echo "✅ 資產同步完成！"
+
+echo ""
+echo "📊 同步摘要:"
+echo "查看同步的文件："
 rclone ls "$BUCKET" | head -20
 
 echo ""
+echo "🔍 驗證同步結果..."
+rclone check "$ASSETS_DIR/" "$BUCKET/" --one-way --missing-on-dst --max-backlog=200000 || true
+
+echo ""
 echo "🔗 R2 Storage 路徑: $BUCKET"
+echo "🌐 公開端點: https://pub-1808868ac1e14b13abe9e2800cace884.r2.dev"
