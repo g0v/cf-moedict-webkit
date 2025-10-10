@@ -28,7 +28,10 @@ window.initMoedict = function() {
 		'/js/jquery-migrate-3.0.0.min.js',
 		'/js/jquery-ui-1.10.4.custom.min.js',
 		'/js/prelude-browser-min.js',
-		'/js/han.js'
+		'/js/han.js',
+		'/js/raphael.js',
+		'/js/sax.js',
+		'/js/jquery.strokeWords.js'
 	];
 
 	// 順序載入腳本
