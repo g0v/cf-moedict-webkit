@@ -137,6 +137,24 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=IE9">
 
+
+	<!-- 處理 # 路由的前端腳本 -->
+	<script>
+		// 處理頁面載入時的 hash
+		(function() {
+			// 檢查是否有 hash 且不為空
+			if (window.location.hash && window.location.hash !== '#') {
+				var hash = window.location.hash.substring(1); // 移除 # 符號
+				if (hash) {
+					// 更新 URL，移除 hash
+					var newUrl = window.location.pathname.replace(/\\/$/, '') + '/' + hash;
+					// 重新載入頁面以取得正確內容
+					window.location.href = newUrl;
+				}
+			}
+		})();
+	</script>
+
 	<!-- 原專案 CSS -->
 	<link rel="stylesheet" href="${R2_ENDPOINT}/styles.css">
 	<link rel="stylesheet" href="${R2_ENDPOINT}/css/cupertino/jquery-ui-1.10.4.custom.css">
@@ -153,115 +171,7 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 	<link rel="preload" href="${R2_ENDPOINT}/fonts/EBAS-Subset.woff" as="font" type="font/woff" crossorigin>
 	<link rel="preload" href="${R2_ENDPOINT}/fonts/FiraSansOT-Regular.woff" as="font" type="font/woff" crossorigin>
 
-	<!-- 自訂樣式 -->
-	<style>
-		/* 容器樣式 */
-		.dictionary-page {
-			max-width: 900px;
-			margin: 0 auto;
-			padding: 20px;
-		}
-
-		/* 標題樣式 */
-		.dictionary-page h1 {
-			margin-bottom: 30px;
-			padding-bottom: 15px;
-			border-bottom: 2px solid #e0e0e0;
-		}
-
-		/* 異音字區塊 */
-		.heteronym {
-			margin: 25px 0;
-			padding: 20px;
-			background: #f8f9fa;
-			border-left: 4px solid #007bff;
-			border-radius: 4px;
-		}
-
-		/* 注音拼音 */
-		.phonetic {
-			margin-bottom: 15px;
-			font-size: 1.1em;
-		}
-		.bopomofo {
-			color: #dc3545;
-			margin-right: 15px;
-			font-weight: bold;
-		}
-		.pinyin {
-			color: #28a745;
-			font-style: italic;
-		}
-
-		/* 定義列表 */
-		.definitions {
-			margin-top: 15px;
-		}
-		.definitions li {
-			margin: 15px 0;
-			line-height: 1.8;
-		}
-
-		/* 例句和引文 */
-		.example, .quote {
-			margin: 10px 0;
-			padding: 12px;
-			background: #fff;
-			border-left: 3px solid #6c757d;
-			color: #555;
-		}
-
-		/* 同義詞、反義詞 */
-		.synonyms, .antonyms {
-			margin-top: 10px;
-			padding: 8px 12px;
-			background: #e9ecef;
-			border-radius: 4px;
-			font-size: 0.95em;
-		}
-
-		/* 翻譯區塊 */
-		.translations, .xrefs {
-			margin: 30px 0;
-			padding: 20px;
-			background: #f8f9fa;
-			border: 1px solid #dee2e6;
-			border-radius: 4px;
-		}
-		.translations h3, .xrefs h3 {
-			margin-top: 0;
-			margin-bottom: 15px;
-			color: #495057;
-			font-size: 1.2em;
-		}
-		.translation-item, .xref-item {
-			margin: 10px 0;
-			padding: 8px 0;
-		}
-
-		/* 搜尋結果 */
-		.search-results ul {
-			list-style: none;
-			padding: 0;
-		}
-		.search-results li {
-			margin: 15px 0;
-			padding: 15px;
-			background: #f8f9fa;
-			border-radius: 4px;
-			border-left: 4px solid #007bff;
-		}
-
-		/* 找不到結果 */
-		.not-found {
-			text-align: center;
-			padding: 60px 20px;
-			color: #6c757d;
-		}
-		.not-found h1 {
-			border: none;
-		}
-	</style>
+	<!-- 使用原專案樣式，移除自訂樣式 -->
 </head>
 <body>
 	${bodyHTML}
@@ -282,6 +192,7 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 		fjs.parentNode.insertBefore(js, fjs);
 		}(document, 'script', 'facebook-jssdk'));
 	</script>
+
 </body>
 </html>`;
 }
