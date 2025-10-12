@@ -4,6 +4,7 @@
  */
 
 import { DictionaryAPIResponse, DictionaryLang } from './types';
+import { NavbarComponent } from './navbar-component';
 
 /**
  * 字典頁面組件 Props
@@ -22,7 +23,17 @@ export function DictionaryPage(props: DictionaryPageProps) {
 	const { title, heteronyms = [], translation, xrefs = [] } = entry;
 
 	return (
-		<div className="result">
+		<>
+			{/* 導航列 */}
+			<NavbarComponent
+				currentLang={lang}
+				onLangChange={(newLang) => {
+					// TODO: 實現語言切換邏輯
+					console.log('語言切換到:', newLang);
+				}}
+			/>
+
+			<div className="result">
 			{/* 標題 */}
 			<h1 className="title" dangerouslySetInnerHTML={{ __html: title || text }} />
 
@@ -123,7 +134,8 @@ export function DictionaryPage(props: DictionaryPageProps) {
 					))}
 				</div>
 			)}
-		</div>
+			</div>
+		</>
 	);
 }
 
@@ -162,7 +174,17 @@ export function SearchResultsPage(props: SearchResultsPageProps) {
 	const { text, segments } = props;
 
 	return (
-		<div className="result">
+		<>
+			{/* 導航列 */}
+			<NavbarComponent
+				currentLang="a"
+				onLangChange={(newLang) => {
+					// TODO: 實現語言切換邏輯
+					console.log('語言切換到:', newLang);
+				}}
+			/>
+
+			<div className="result">
 			<h1 className="title">搜尋：{text}</h1>
 			<p>找到 {segments.length} 個相關字詞：</p>
 			<div className="entry">
@@ -178,7 +200,8 @@ export function SearchResultsPage(props: SearchResultsPageProps) {
 					</ul>
 				</div>
 			</div>
-		</div>
+			</div>
+		</>
 	);
 }
 
@@ -193,14 +216,25 @@ export function NotFoundPage(props: NotFoundPageProps) {
 	const { text } = props;
 
 	return (
-		<div className="result">
+		<>
+			{/* 導航列 */}
+			<NavbarComponent
+				currentLang="a"
+				onLangChange={(newLang) => {
+					// TODO: 實現語言切換邏輯
+					console.log('語言切換到:', newLang);
+				}}
+			/>
+
+			<div className="result">
 			<h1 className="title">找不到：{text}</h1>
 			<div className="entry">
 				<div className="entry-item">
 					<p className="def">查無此詞彙，請嘗試其他關鍵字。</p>
 				</div>
 			</div>
-		</div>
+			</div>
+		</>
 	);
 }
 

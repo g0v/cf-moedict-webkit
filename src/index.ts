@@ -1,7 +1,7 @@
 import { Env, DictionaryLang, DictionaryAPIResponse, ErrorResponse } from './types';
 import { handleDictionaryAPI } from './dictionary';
 import { handleImageGeneration, generateTextSVGWithR2Fonts } from './image-generation';
-import { handlePageRequest } from './page-rendering';
+import { handlePageRequest, handleAboutPageRequest } from './page-rendering';
 import { handleStaticAssets } from './static-assets';
 import { Resvg } from '@cf-wasm/resvg';
 import { handleSubRouteAPI } from './sub-routes.js';
@@ -39,6 +39,11 @@ export default {
 
 			if (url.pathname.endsWith('.png')) {
 				return await handleImageGeneration(url, env);
+			}
+
+			// 處理 about.html 頁面
+			if (url.pathname === '/about.html') {
+				return await handleAboutPageRequest(url, env);
 			}
 
 			if (url.pathname.endsWith('.html') || url.pathname === '/') {
@@ -178,7 +183,7 @@ export async function handlePrototypeImageGeneration(env: Env): Promise<Response
 		const pngData = resvg.render();
 		const pngBuffer = pngData.asPng();
 
-		return new Response(pngBuffer, {
+		return new Response(pngBuffer as unknown as ArrayBuffer, {
 			headers: {
 				'Content-Type': 'image/png',
 				'Cache-Control': 'public, max-age=31536000', // 快取一年
@@ -202,7 +207,7 @@ export async function handlePrototypeImageGeneration(env: Env): Promise<Response
 			const pngData = resvg.render();
 			const pngBuffer = pngData.asPng();
 
-			return new Response(pngBuffer, {
+			return new Response(pngBuffer as unknown as ArrayBuffer, {
 				status: 500,
 				headers: {
 					'Content-Type': 'image/png',
