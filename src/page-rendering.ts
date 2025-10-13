@@ -391,6 +391,120 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 			margin: 0 auto;
 		}
 
+		/* 主字標題樣式 - 基於原專案 */
+		h1.title {
+			font-family: "MOESongUN", "教育部標準宋體UN", "全字庫正宋體", "TW-Sung-98_1", "教育部標準宋體", "CMEXa1", "新細明體", "PMingLiU", "MingLiU", "全字庫正楷體", "TW-Kai-98_1", "教育部標準楷書", "kai-pc", "CMEXc1", "標楷體", "BiauKai", "DFKaiShu-SB-Estd-BF", sans-serif, "HANNOMmoesubset-Regular", "HAN NOM A", "HAN NOM B";
+			font-size: 200%;
+			line-height: 2;
+			font-weight: 501;
+			margin: -0.25em 0 0.5em;
+			padding-bottom: 0.3em;
+			border-bottom: 1px dotted #ccc;
+			visibility: visible !important;
+		}
+
+		/* hruby 基礎樣式（對齊原專案 _hruby.sass/_optimise-ruby.sass） */
+		hruby { display: inline; line-height: 2; }
+		hruby rp { display: none; }
+		hruby ru { position: relative; display: inline-block; text-indent: 0; }
+		hruby ru[annotation] > rt { display: inline-block; height: 0; width: 0; font: 0/0 hidden-text; }
+		hruby ru:before, hruby zhuyin { position: absolute; display: inline-block; transform: scale(.55); }
+		hruby ru[annotation] { text-align: center; }
+		hruby ru[annotation]:before { left: -265%; top: -.5em; height: 1em; width: 600%; content: attr(annotation); line-height: 1; text-align: center; text-indent: 0; color: #666; font-family: "Noto Sans", Geneva, "Segoe UI", "MOEDICT", "Fira Sans OT", "Helvetica Neue", Helvetica, Arial !important; }
+		hruby[rightangle] ru[annotation]:before { left: -250%; }
+		hruby ru[zhuyin] { display: inline-block; position: relative; width: 1.8em; text-align: left; }
+		hruby ru[zhuyin] zhuyin { right: .2em; top: 0; height: 2.7em; width: .8em; line-height: .9; white-space: pre-wrap; word-break: break-all; color: #666; font-family: MOEDICT, 'Zhuyin Kaiti', cursive, serif !important; }
+		hruby ru[zhuyin] diao { position: absolute; right: -.9em; top: 0; display: inline-block; width: 1em; color: #666; font-family: MOEDICT, 'Zhuyin Kaiti', cursive, serif !important; }
+		hruby ru[zhuyin][length='1'] zhuyin { margin-top: .125em; }
+		hruby ru[zhuyin][length='1'] diao { margin-top: -.35em; }
+		hruby ru[zhuyin][length='2'] zhuyin { margin-top: -.175em; }
+		hruby ru[zhuyin][length='2'] diao { margin-top: .5em; }
+		hruby ru[zhuyin][length='3'] zhuyin { margin-top: -.45em; }
+		hruby ru[zhuyin][length='3'] diao { margin-top: 1.3em; }
+
+		/* 注音和拼音樣式 - 基於原專案 */
+		.bopomofo {
+			display: table;
+			margin-top: -14px;
+			padding-bottom: 5px;
+			margin-right: 24px;
+			margin-bottom: 10px;
+			color: #666;
+			font-size: 90%;
+			width: 100%;
+			border-bottom: 1px dotted #ccc;
+			word-break: normal !important;
+			padding-right: 34px;
+		}
+
+		.bopomofo .part-of-speech {
+			margin: 0px 5px 0 5px;
+		}
+
+		.bopomofo .bopomofo {
+			font-family: "MOESongUN", "教育部標準宋體UN", "全字庫正宋體", "TW-Sung-98_1", "教育部標準宋體", "CMEXa1", "新細明體", "PMingLiU", "MingLiU", "全字庫正楷體", "TW-Kai-98_1", "教育部標準楷書", "kai-pc", "CMEXc1", "標楷體", "BiauKai", "DFKaiShu-SB-Estd-BF", sans-serif, "HANNOMmoesubset-Regular", "HAN NOM A", "HAN NOM B";
+			font-weight: 501;
+			display: inline-block;
+			word-break: normal !important;
+		}
+
+		.bopomofo .pinyin {
+			font-family: "Noto Sans", Geneva, "Segoe UI", "MOEDICT", "Fira Sans OT", "Helvetica Neue", Helvetica, Arial !important;
+			display: inline-block;
+			word-break: normal !important;
+		}
+
+		.bopomofo .tone {
+			position: relative;
+			float: right;
+			left: 10px;
+			top: -6px;
+			font-size: 120%;
+		}
+
+		.bopomofo .main-pronunciation {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+		}
+
+		.bopomofo .alternative {
+			display: block;
+			margin-top: 5px;
+			font-size: 85%;
+			color: #888;
+		}
+
+		.bopomofo .alternative .bopomofo,
+		.bopomofo .alternative .pinyin {
+			margin-right: 10px;
+		}
+
+		.bopomofo.cn-specific {
+			background: #eeeeff;
+			border-radius: 10px;
+			padding-top: 3px;
+			border-top: 5px solid white;
+		}
+
+		.bopomofo.cn-specific .cn-specific {
+			border-top: 1px solid #eee;
+		}
+
+		/* 又音標記 */
+		.youyin {
+			font-size: 80%;
+			color: #888;
+			margin-left: 10px;
+		}
+
+		/* 標題區塊 */
+		.title-section {
+			display: flex;
+			align-items: center;
+			margin-bottom: 10px;
+		}
+
 		/* 手機版調整 */
 		@media (max-width: 767px) {
 			body {
@@ -403,6 +517,17 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 
 			.navbar-fixed-top {
 				position: static; /* 手機版導航列不固定 */
+			}
+
+			.bopomofo {
+				margin-right: 0;
+				padding-right: 10px;
+			}
+
+			.bopomofo .main-pronunciation {
+				flex-direction: column;
+				align-items: flex-start;
+				gap: 5px;
 			}
 		}
 	</style>

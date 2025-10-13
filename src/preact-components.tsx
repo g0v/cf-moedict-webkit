@@ -5,6 +5,8 @@
 
 import { DictionaryAPIResponse, DictionaryLang } from './types';
 import { NavbarComponent } from './navbar-component';
+import { rightAngle } from './ruby2hruby';
+import { decorateRuby, formatBopomofo, formatPinyin } from './bopomofo-pinyin-utils';
 
 /**
  * 字典頁面組件 Props
@@ -34,61 +36,115 @@ export function DictionaryPage(props: DictionaryPageProps) {
 			/>
 
 			<div className="result">
-			{/* 標題 */}
-			<h1 className="title" dangerouslySetInnerHTML={{ __html: title || text }} />
-
 			{/* 異音字列表 */}
-			{heteronyms.map((het: any, idx: number) => (
-				<div key={idx} className="entry">
-					{/* 注音/拼音 */}
-					{het.bopomofo && (
-						<div className="bopomofo">
-							<span className="bopomofo">{het.bopomofo}</span>
-						</div>
-					)}
-					{het.pinyin && (
-						<div className="pinyin">
-							<span className="pinyin">{het.pinyin}</span>
-						</div>
-					)}
+			{heteronyms.map((het: any, idx: number) => {
+				// 處理注音和拼音顯示
+				const rubyData = decorateRuby({
+					LANG: lang,
+					title: title || text,
+					bopomofo: het.bopomofo,
+					pinyin: het.pinyin,
+					trs: het.trs
+				});
 
-					{/* 定義列表 */}
-					{het.definitions && het.definitions.length > 0 && (
-						<div className="entry-item">
-							<ol>
-								{het.definitions.map((def: any, defIdx: number) => (
-									<li key={defIdx}>
-										{/* 定義 */}
-										{def.def && <div className="def" dangerouslySetInnerHTML={{ __html: def.def }} />}
+				return (
+					<div key={idx} className="entry">
+                        {/* 標題和 Ruby 標註：使用原專案流程（decorate-ruby -> rightAngle） */}
+                        <h1 className="title" data-title={title || text}>
+                            {(() => {
+                                const htmlRuby = rubyData.ruby || '';
+                                if (!htmlRuby) {
+                                    return <span dangerouslySetInnerHTML={{ __html: title || text }} />;
+                                }
+                                const hruby = rightAngle(htmlRuby);
+                                return <span dangerouslySetInnerHTML={{ __html: hruby }} />;
+                            })()}
+                            {rubyData.youyin && (
+                                <small className="youyin">{rubyData.youyin}</small>
+                            )}
+                        </h1>
 
-										{/* 例句/引文 */}
-										{def.example && def.example.map((ex: string, exIdx: number) => (
-											<div key={exIdx} className="example" dangerouslySetInnerHTML={{ __html: ex }} />
-										))}
-										{def.quote && def.quote.map((q: string, qIdx: number) => (
-											<div key={qIdx} className="quote" dangerouslySetInnerHTML={{ __html: q }} />
-										))}
+						{/* 注音和拼音區塊 */}
+						{(het.bopomofo || het.pinyin || rubyData.bAlt || rubyData.pAlt) && (
+							<div className={`bopomofo ${rubyData.cnSpecific}`}>
+								{/* 簡體字標記 */}
+								{het.alt && (
+									<div lang="zh-Hans" className="cn-specific">
+										<span className="xref part-of-speech">简</span>
+										<span className="xref">{het.alt}</span>
+									</div>
+								)}
 
-										{/* 同義詞/反義詞 */}
-										{def.synonyms && (
-											<div className="synonyms">
-												<span className="part-of-speech">似</span>
-												<span dangerouslySetInnerHTML={{ __html: def.synonyms.replace(/,/g, '、') }} />
-											</div>
+								{/* 大陸特定注音拼音 */}
+								{rubyData.cnSpecific && rubyData.pinyin && rubyData.bopomofo && (
+									<small className="alternative cn-specific">
+										<span className="pinyin" dangerouslySetInnerHTML={{ __html: formatPinyin(rubyData.pinyin) }} />
+										<span className="bopomofo" dangerouslySetInnerHTML={{ __html: formatBopomofo(rubyData.bopomofo) }} />
+									</small>
+								)}
+
+								{/* 主要注音和拼音 */}
+								<div className="main-pronunciation">
+									{het.bopomofo && (
+										<span className="bopomofo" dangerouslySetInnerHTML={{ __html: formatBopomofo(het.bopomofo) }} />
+									)}
+									{het.pinyin && (
+										<span className="pinyin" dangerouslySetInnerHTML={{ __html: formatPinyin(het.pinyin) }} />
+									)}
+								</div>
+
+								{/* 變音/又音 */}
+								{(rubyData.bAlt || rubyData.pAlt) && (
+									<small className="alternative">
+										{rubyData.pAlt && (
+											<span className="pinyin" dangerouslySetInnerHTML={{ __html: formatPinyin(rubyData.pAlt) }} />
 										)}
-										{def.antonyms && (
-											<div className="antonyms">
-												<span className="part-of-speech">反</span>
-												<span dangerouslySetInnerHTML={{ __html: def.antonyms.replace(/,/g, '、') }} />
-											</div>
+										{rubyData.bAlt && (
+											<span className="bopomofo" dangerouslySetInnerHTML={{ __html: formatBopomofo(rubyData.bAlt) }} />
 										)}
-									</li>
-								))}
-							</ol>
-						</div>
-					)}
-				</div>
-			))}
+									</small>
+								)}
+							</div>
+						)}
+
+						{/* 定義列表 */}
+						{het.definitions && het.definitions.length > 0 && (
+							<div className="entry-item">
+								<ol>
+									{het.definitions.map((def: any, defIdx: number) => (
+										<li key={defIdx}>
+											{/* 定義 */}
+											{def.def && <div className="def" dangerouslySetInnerHTML={{ __html: def.def }} />}
+
+											{/* 例句/引文 */}
+											{def.example && def.example.map((ex: string, exIdx: number) => (
+												<div key={exIdx} className="example" dangerouslySetInnerHTML={{ __html: ex }} />
+											))}
+											{def.quote && def.quote.map((q: string, qIdx: number) => (
+												<div key={qIdx} className="quote" dangerouslySetInnerHTML={{ __html: q }} />
+											))}
+
+											{/* 同義詞/反義詞 */}
+											{def.synonyms && (
+												<div className="synonyms">
+													<span className="part-of-speech">似</span>
+													<span dangerouslySetInnerHTML={{ __html: def.synonyms.replace(/,/g, '、') }} />
+												</div>
+											)}
+											{def.antonyms && (
+												<div className="antonyms">
+													<span className="part-of-speech">反</span>
+													<span dangerouslySetInnerHTML={{ __html: def.antonyms.replace(/,/g, '、') }} />
+												</div>
+											)}
+										</li>
+									))}
+								</ol>
+							</div>
+						)}
+					</div>
+				);
+			})}
 
 			{/* 翻譯 */}
 			{translation && (
