@@ -10,6 +10,20 @@ import { rightAngle } from './ruby2hruby';
 import { decorateRuby, formatBopomofo, formatPinyin } from './bopomofo-pinyin-utils';
 
 /**
+ * 根據語言獲取音檔 URL
+ */
+function getAudioUrl(lang: DictionaryLang, audioId: string): string {
+	const httpMap: Record<DictionaryLang, string> = {
+		a: 'https://203146b5091e8f0aafda-15d41c68795720c6e932125f5ace0c70.ssl.cf1.rackcdn.com',
+		h: 'https://a7ff62cf9d5b13408e72-351edcddf20c69da65316dd74d25951e.ssl.cf1.rackcdn.com',
+		t: 'https://1763c5ee9859e0316ed6-db85b55a6a3fbe33f09b9245992383bd.ssl.cf1.rackcdn.com',
+		c: 'https://203146b5091e8f0aafda-15d41c68795720c6e932125f5ace0c70.ssl.cf1.rackcdn.com' // 兩岸詞典使用華語路由
+	};
+
+	return `${httpMap[lang]}/${audioId}.ogg`;
+}
+
+/**
  * 字典頁面組件 Props
  */
 interface DictionaryPageProps {
@@ -67,7 +81,7 @@ export function DictionaryPage(props: DictionaryPageProps) {
                                 <span className="audioBlock">
                                     <i itemType="http://schema.org/AudioObject" className="icon-play playAudio part-of-speech">
                                         <meta itemProp="name" content={`${het.audio_id}.ogg`} />
-                                        <meta itemProp="contentURL" content={`https://203146b5091e8f0aafda-15d41c68795720c6e932125f5ace0c70.ssl.cf1.rackcdn.com/${het.audio_id}.ogg`} />
+                                        <meta itemProp="contentURL" content={getAudioUrl(lang, het.audio_id)} />
                                     </i>
                                 </span>
                             )}
