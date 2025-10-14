@@ -437,6 +437,88 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 			padding-right: 34px;
 		}
 
+		/* 播放按鈕樣式（複刻原專案 _result.scss 和 _font-awesome.scss） */
+		.part-of-speech.playAudio {
+			/* 原專案：紅色圖示、白色底、無邊框 */
+			color: #6B0000;
+			background: transparent;
+			font-size: 90%;
+			padding: 0;
+			cursor: pointer;
+			line-height: 100%;
+			display: inline-block;
+		}
+
+		.audioBlock {
+			display: inline-block;
+			margin-top: 10px;
+			font-size: 70% !important;
+		}
+
+		.audioBlock.playing {
+		/* 無邊框 */
+			border: none !important;
+			margin-left: 0 !important;
+    		padding-left: 0 !important;
+    		padding-right: 0 !important;
+		}
+
+		.playAudio {
+			margin-left: 5px;
+			color: #6B0000;
+			font-size: 70%;
+			padding-left: 5px;
+			display: inline-block !important;
+		}
+
+		/* Font Awesome 圖示樣式 */
+		.icon-play:before {
+			content: "\f04b";
+		}
+
+		.icon-pause:before {
+			content: "\f04c";
+		}
+
+		.icon-stop:before {
+			content: "\f04d";
+		}
+
+		/* 不使用 spinner，直接切換成 stop */
+
+		/* FontAwesome 字體定義 */
+		@font-face {
+			font-family: 'FontAwesome';
+			src: url('${R2_ENDPOINT}/fonts/fontawesome-webfont.eot?v=3.2.1');
+			src: url('${R2_ENDPOINT}/fonts/fontawesome-webfont.eot?#iefix&v=3.2.1') format('embedded-opentype'),
+				 url('${R2_ENDPOINT}/fonts/fontawesome-webfont.woff?v=3.2.1') format('woff'),
+				 url('${R2_ENDPOINT}/fonts/fontawesome-webfont.ttf?v=3.2.1') format('truetype'),
+				 url('${R2_ENDPOINT}/fonts/fontawesome-webfont.svg#fontawesomeregular?v=3.2.1') format('svg');
+			font-weight: normal;
+			font-style: normal;
+		}
+
+		/* 基礎圖示樣式 */
+		[class^="icon-"]:before,
+		[class*=" icon-"]:before {
+			font-family: FontAwesome;
+			font-weight: normal;
+			font-style: normal;
+			text-decoration: inherit;
+			-webkit-font-smoothing: antialiased;
+			*margin-right: .3em;
+		}
+
+		/* 旋轉動畫（用於 spinner） */
+		@keyframes spin {
+			0% { transform: rotate(0deg); }
+			100% { transform: rotate(360deg); }
+		}
+
+		.icon-spinner:before {
+			animation: spin 1s linear infinite;
+		}
+
 		.bopomofo .part-of-speech {
 			margin: 0px 5px 0 5px;
 		}
@@ -531,6 +613,71 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 			}
 		}
 	</style>
+		<script>
+		// 提前在 <head> 內定義全域播放函式，確保 inline onclick 可用
+		(function(){
+			var player = null, playing = null, seq = 0;
+			function canPlay(type){
+				var a = document.createElement('audio');
+				try { return !!(a.canPlayType && a.canPlayType(type).replace(/no/, '')); } catch(e) { return false; }
+			}
+			function canPlayMp3(){ return canPlay('audio/mpeg;'); }
+			function getEl(){ return document.getElementById('player-' + seq); }
+			window.stopAudio = function(){
+				var $el = getEl();
+				if ($el) {
+					$el.classList.remove('icon-stop');
+					$el.classList.add('icon-play');
+					var block = $el.closest && $el.closest('.audioBlock');
+					if (block) block.classList.remove('playing');
+				}
+				if (player) { try { player.unload && player.unload(); player.stop && player.stop(); } catch(_e) {} }
+				player = null; playing = null;
+			};
+			window.playAudio = function(el, url){
+				function done(){ window.stopAudio(); }
+				function play(){
+					var $el = getEl();
+					if (playing === url) {
+						if ($el && $el.classList.contains('icon-stop')) { window.stopAudio(); done(); }
+						return;
+					}
+					window.stopAudio();
+					seq++;
+					if (el && el.setAttribute) el.setAttribute('id', 'player-' + seq);
+					$el = getEl();
+					playing = url;
+					var block = $el && $el.closest && $el.closest('.audioBlock');
+					if ($el) { $el.classList.remove('icon-play'); $el.classList.add('icon-stop'); }
+					if (block) { block.classList.add('playing'); }
+					var urls = [url];
+					if (/ogg$/.test(url) && canPlayMp3() && !/Gecko\\//.test(navigator.userAgent)) { urls.unshift(url.replace(/ogg$/, 'mp3')); }
+					function onend(){ done(); }
+					function onloaderror(){ done(); }
+					function onplay(){ if ($el) { $el.classList.add('icon-stop'); } }
+					if (window.Howl) {
+						player = new window.Howl({ html5: true, src: urls, onend: onend, onloaderror: onloaderror, onplay: onplay });
+						player.play();
+					} else {
+						var s = document.createElement('script'); s.src = '${R2_ENDPOINT}/js/howler.js'; s.onload = function(){
+							player = new window.Howl({ html5: true, src: urls, onend: onend, onloaderror: onloaderror, onplay: onplay });
+							player.play();
+						}; document.head.appendChild(s);
+					}
+				}
+				if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', play, { once: true }); } else { play(); }
+			};
+
+			// 簡單的全域委派（點擊任何 .playAudio）
+			document.addEventListener('click', function(e) {
+				var elc = e.target && e.target.closest ? e.target.closest('.playAudio') : null;
+				if (elc) {
+					var meta = elc.querySelector && elc.querySelector('meta[itemprop="contentURL"]');
+					if (meta) { window.playAudio(elc, meta.getAttribute('content')); }
+				}
+			});
+		})();
+		</script>
 </head>
 <body>
 	${bodyHTML}
@@ -539,6 +686,112 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 	<script src="${R2_ENDPOINT}/js/es5-shim.js" charset="utf-8"></script>
 	<script src="${R2_ENDPOINT}/js/es5-sham.js" charset="utf-8"></script>
 	<script src="${R2_ENDPOINT}/js/deps.js" charset="utf-8"></script>
+	<script>
+	// 播放音訊：複刻原專案 window.playAudio 行為（簡化，僅華語 OGG/MP3 切換）
+	(function(){
+		var player = null, playing = null, seq = 0;
+		function canPlay(type){
+			var a = document.createElement('audio');
+			try { return !!(a.canPlayType && a.canPlayType(type).replace(/no/, '')); } catch(e) { return false; }
+		}
+		function canPlayOgg(){ return canPlay('audio/ogg; codecs="vorbis"'); }
+		function canPlayMp3(){ return canPlay('audio/mpeg;'); }
+		function getEl(){ return document.getElementById('player-' + seq); }
+		window.stopAudio = function(){
+			console.log('🔧 [Audio] stopAudio 被呼叫');
+			var $el = getEl();
+			if ($el) {
+				console.log('🔧 [Audio] 重置圖示到 play');
+				$el.classList.remove('icon-stop');
+				$el.classList.remove('icon-spinner');
+				$el.classList.add('icon-play');
+				var block = $el.closest('.audioBlock');
+				if (block) {
+					console.log('🔧 [Audio] 移除 playing 類別');
+					block.classList.remove('playing');
+				}
+			}
+			if (player) {
+				console.log('🔧 [Audio] 停止播放器');
+				try { player.unload && player.unload(); player.stop && player.stop(); } catch(_e) {}
+			}
+			player = null; playing = null;
+		};
+		window.playAudio = function(el, url){
+			console.log('🔧 [Audio] playAudio 被呼叫，el:', el, 'url:', url);
+			function done(){ console.log('🔧 [Audio] 播放結束'); window.stopAudio(); }
+			function play(){
+				console.log('🔧 [Audio] 開始播放邏輯');
+				var $el = getEl();
+				if (playing === url) {
+					console.log('🔧 [Audio] 相同 URL，檢查是否要停止');
+					if ($el && $el.classList.contains('icon-stop')) { window.stopAudio(); done(); }
+					return;
+				}
+				console.log('🔧 [Audio] 停止之前的播放');
+				window.stopAudio();
+				seq++;
+				el.id = 'player-' + seq;
+				$el = getEl();
+				playing = url;
+				var block = $el && $el.closest('.audioBlock');
+				if ($el) {
+					console.log('🔧 [Audio] 切換圖示到 stop');
+					$el.classList.remove('icon-play');
+					$el.classList.add('icon-stop');
+				}
+				if (block) {
+					console.log('🔧 [Audio] 添加 playing 類別');
+					block.classList.add('playing');
+				}
+				var urls = [url];
+				if (/ogg$/.test(url) && canPlayMp3() && !/Gecko\\//.test(navigator.userAgent)) {
+					console.log('🔧 [Audio] 添加 MP3 fallback');
+					urls.unshift(url.replace(/ogg$/, 'mp3'));
+				}
+				function onend(){ console.log('🔧 [Audio] Howl onend'); done(); }
+				function onloaderror(){ console.log('🔧 [Audio] Howl onloaderror'); done(); }
+				function onplay(){ console.log('🔧 [Audio] Howl onplay'); if ($el) { $el.classList.remove('icon-play'); $el.classList.remove('icon-spinner'); $el.classList.add('icon-stop'); } }
+				if (window.Howl) {
+					console.log('🔧 [Audio] Howl 已載入，直接播放');
+					player = new window.Howl({ html5: true, src: urls, onend: onend, onloaderror: onloaderror, onplay: onplay });
+					player.play();
+				} else {
+					console.log('🔧 [Audio] Howl 未載入，載入中...');
+					var s = document.createElement('script'); s.src = '${R2_ENDPOINT}/js/howler.js'; s.onload = function(){
+						console.log('🔧 [Audio] Howl 載入完成，開始播放');
+						player = new window.Howl({ html5: true, src: urls, onend: onend, onloaderror: onloaderror, onplay: onplay });
+						player.play();
+					}; document.head.appendChild(s);
+				}
+			}
+			if (document.readyState === 'loading') {
+				console.log('🔧 [Audio] 文件載入中，等待 DOMContentLoaded');
+				document.addEventListener('DOMContentLoaded', play, { once: true });
+			} else {
+				console.log('🔧 [Audio] 文件已載入，直接播放');
+				play();
+			}
+		};
+
+		// 綁定播放按鈕點擊事件（簡化回原本可用的全域委派）
+		console.log('🔧 [Audio] 開始綁定點擊事件');
+		document.addEventListener('click', function(e) {
+			console.log('🔧 [Audio] 點擊事件觸發，target:', e.target);
+			var el = (e.target && e.target.closest) ? e.target.closest('.playAudio') : null;
+			console.log('🔧 [Audio] closest .playAudio 結果:', el);
+			if (el) {
+				var contentURL = el.querySelector('meta[itemprop="contentURL"]');
+				console.log('🔧 [Audio] 找到 contentURL meta:', contentURL);
+				if (contentURL) {
+					var url = contentURL.getAttribute('content');
+					console.log('🔧 [Audio] 準備播放 URL:', url);
+					window.playAudio(el, url);
+				}
+			}
+		});
+	})();
+	</script>
 
 	<!-- Facebook SDK -->
 	<div id="fb-root"></div>

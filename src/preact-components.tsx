@@ -4,6 +4,7 @@
  */
 
 import { DictionaryAPIResponse, DictionaryLang } from './types';
+import AUDIO_MAP from './dict-concised.audio';
 import { NavbarComponent } from './navbar-component';
 import { rightAngle } from './ruby2hruby';
 import { decorateRuby, formatBopomofo, formatPinyin } from './bopomofo-pinyin-utils';
@@ -62,9 +63,17 @@ export function DictionaryPage(props: DictionaryPageProps) {
                             {rubyData.youyin && (
                                 <small className="youyin">{rubyData.youyin}</small>
                             )}
+                            {het.audio_id && (
+                                <span className="audioBlock">
+                                    <i itemType="http://schema.org/AudioObject" className="icon-play playAudio part-of-speech">
+                                        <meta itemProp="name" content={`${het.audio_id}.ogg`} />
+                                        <meta itemProp="contentURL" content={`https://203146b5091e8f0aafda-15d41c68795720c6e932125f5ace0c70.ssl.cf1.rackcdn.com/${het.audio_id}.ogg`} />
+                                    </i>
+                                </span>
+                            )}
                         </h1>
 
-						{/* 注音和拼音區塊 */}
+						{/* 注音、拼音、朗讀按鈕區塊（包含原專案的播放按鈕樣式與邏輯所需標記） */}
 						{(het.bopomofo || het.pinyin || rubyData.bAlt || rubyData.pAlt) && (
 							<div className={`bopomofo ${rubyData.cnSpecific}`}>
 								{/* 簡體字標記 */}
@@ -83,7 +92,7 @@ export function DictionaryPage(props: DictionaryPageProps) {
 									</small>
 								)}
 
-								{/* 主要注音和拼音 */}
+                                {/* 主要注音和拼音 */}
 								<div className="main-pronunciation">
 									{het.bopomofo && (
 										<span className="bopomofo" dangerouslySetInnerHTML={{ __html: formatBopomofo(het.bopomofo) }} />
