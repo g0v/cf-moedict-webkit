@@ -254,10 +254,22 @@ function getLangName(lang: string): string {
  * 格式化翻譯內容（處理字串或陣列）
  */
 function formatTranslation(value: string | string[]): string {
+	let text: string;
 	if (Array.isArray(value)) {
-		return value.join(', ');
+		text = value.join(', ');
+	} else {
+		text = value;
 	}
-	return value;
+
+	// 清理 HTML 標籤，只保留純文字
+	return untag(text);
+}
+
+/**
+ * 移除 HTML 標籤，保留純文字
+ */
+function untag(input: string): string {
+	return input.replace(/<[^>]*>/g, '');
 }
 
 /**
