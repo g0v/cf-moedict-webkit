@@ -73,6 +73,39 @@ export function speakText(label: string, text: string): void {
 		u.lang = getLanguageCode(label);
 		u.volume = 1.0;
 		u.rate = 1.0;
+		// Chrome: 若法語失敗，嘗試在 voices 已存在時挑選 fr-* voice
+		if (label === '法') {
+			try {
+				const voices = syn.getVoices ? syn.getVoices() : [];
+				const frList = (voices || []).filter(v => v && v.lang && String(v.lang).toLowerCase().indexOf('fr') === 0);
+				const prefer = (frList || []).find(v => (v.name||'').toLowerCase().indexOf('google') >= 0 && String(v.lang).toLowerCase() === 'fr-fr')
+					|| (frList || []).find(v => String(v.lang).toLowerCase() === 'fr-fr')
+					|| (frList || []).find(v => String(v.lang).toLowerCase() === 'fr-ca')
+					|| (frList || [])[0] || null;
+				if (prefer) { u.voice = prefer; u.lang = prefer.lang; }
+			} catch(_) {}
+		}
+		// Firefox 英語：挑選適合 voice 並微調參數，降低金屬音
+		if (label === '英') {
+			try {
+				const ua = (typeof navigator !== 'undefined' ? navigator.userAgent : '') || '';
+				const isFirefox = ua.indexOf('Gecko/') >= 0 && ua.indexOf('Chrome/') < 0;
+				const voices = syn.getVoices ? syn.getVoices() : [];
+				const enList = (voices || []).filter(v => v && v.lang && String(v.lang).toLowerCase().indexOf('en') === 0)
+					.filter(v => {
+						const nm = (v.name||'').toLowerCase();
+						return nm.indexOf('compact') < 0 && nm !== 'fred';
+					});
+				const prefer = enList.find(v => (v.name||'').toLowerCase().indexOf('samantha')>=0)
+					|| enList.find(v => (v.name||'').toLowerCase().indexOf('alex')>=0)
+					|| enList.find(v => String(v.lang).toLowerCase() === 'en-us')
+					|| enList.find(v => String(v.lang).toLowerCase() === 'en-gb')
+					|| enList.find(v => String(v.lang).toLowerCase() === 'en-au')
+					|| enList[0] || null;
+				if (prefer) { u.voice = prefer; u.lang = prefer.lang; }
+				if (isFirefox) { u.rate = 0.95; u.pitch = 1.02; }
+			} catch(_) {}
+		}
 		syn.speak(u);
 	} catch (err) {
 		// 靜默失敗，只記錄於 console 便於除錯

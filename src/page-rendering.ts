@@ -716,9 +716,102 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 		      var u = new Utter(text);
 		      u.lang = langMap[label] || 'en-US';
 		      u.volume = 1.0; u.rate = 1.0;
+		      function pickFrVoice(voices){
+		        try {
+		          voices = voices || [];
+		          var fr = voices.filter(function(v){ return v && v.lang && String(v.lang).toLowerCase().indexOf('fr') === 0; });
+		          // 1) 優先 Google français
+		          var google = fr.find(function(v){ return (v.name||'').toLowerCase().indexOf('google') >= 0 && String(v.lang).toLowerCase() === 'fr-fr'; });
+		          if (google) return google;
+		          // 2) 其次任何 fr-FR
+		          var frfr = fr.find(function(v){ return String(v.lang).toLowerCase() === 'fr-fr'; });
+		          if (frfr) return frfr;
+		          // 3) 再退 fr-CA
+		          var frca = fr.find(function(v){ return String(v.lang).toLowerCase() === 'fr-ca'; });
+		          if (frca) return frca;
+		          // 4) 任一 fr*
+		          return fr[0] || null;
+		        } catch(_pf) { return null; }
+		      }
+		      function pickEnVoice(voices){
+		        try {
+		          voices = voices || [];
+		          var en = voices.filter(function(v){ return v && v.lang && String(v.lang).toLowerCase().indexOf('en') === 0; });
+		          // 避免較差音色的候選（如 Compact/Fred 等）
+		          en = en.filter(function(v){ var nm = (v.name||'').toLowerCase(); return nm.indexOf('compact') < 0 && nm !== 'fred'; });
+		          // 優先序（macOS 常見）：Samantha, Alex，其次 en-US，再退 en-GB / en-AU / 其他 en*
+		          var prefName = en.find(function(v){ var nm=(v.name||'').toLowerCase(); return nm.indexOf('samantha')>=0; })
+		                    || en.find(function(v){ var nm=(v.name||'').toLowerCase(); return nm.indexOf('alex')>=0; });
+		          if (prefName) return prefName;
+		          var enus = en.find(function(v){ return String(v.lang).toLowerCase() === 'en-us'; });
+		          if (enus) return enus;
+		          var engb = en.find(function(v){ return String(v.lang).toLowerCase() === 'en-gb'; });
+		          if (engb) return engb;
+		          var enau = en.find(function(v){ return String(v.lang).toLowerCase() === 'en-au'; });
+		          if (enau) return enau;
+		          return en[0] || null;
+		        } catch(_pe) { return null; }
+		      }
+		      // 針對法文：選擇適合的 voice
+		      if (label === '法') {
+		        try {
+		          var voices = [];
+		          try { voices = syn.getVoices ? syn.getVoices() : []; } catch(_gv) { voices = []; }
+		          if (!voices || !voices.length) {
+		            try {
+		              window.speechSynthesis.onvoiceschanged = function(){
+		                try {
+		                  var vv = syn.getVoices ? syn.getVoices() : [];
+		                  var chosen = pickFrVoice(vv);
+		                  if (chosen) {
+		                    try { syn.cancel(); } catch(_c) {}
+		                    var u2 = new Utter(text);
+		                    u2.lang = chosen.lang; u2.voice = chosen; u2.volume = 1.0; u2.rate = 1.0;
+		                    syn.speak(u2);
+		                  }
+		                } catch(_vcl) {}
+		              };
+		            } catch(_ael) {}
+		            return; // 等待 voiceschanged 後再播放
+		          }
+		          // 立即可用 voices：選擇 fr-* voice
+		          var chosenNow = pickFrVoice(voices);
+		          if (chosenNow) {
+		            u.voice = chosenNow; u.lang = chosenNow.lang;
+		          }
+		        } catch(_vf) {}
+		      }
+		      // 針對英語（Firefox 上音色調整與 voice 選擇）
+		      if (label === '英') {
+		        try {
+		          var isFirefox = navigator.userAgent.indexOf('Gecko/') >= 0 && navigator.userAgent.indexOf('Chrome/') < 0;
+		          var voicesE = [];
+		          try { voicesE = syn.getVoices ? syn.getVoices() : []; } catch(_gve) { voicesE = []; }
+		          if (!voicesE || !voicesE.length) {
+		            try {
+		              window.speechSynthesis.onvoiceschanged = function(){
+		                try {
+		                  var vv = syn.getVoices ? syn.getVoices() : [];
+		                  var chosenE = pickEnVoice(vv);
+		                  if (chosenE) {
+		                    try { syn.cancel(); } catch(_cE) {}
+		                    var uE = new Utter(text);
+		                    uE.lang = chosenE.lang; uE.voice = chosenE; uE.volume = 1.0; uE.rate = isFirefox ? 0.95 : 1.0; uE.pitch = isFirefox ? 1.02 : 1.0;
+		                    syn.speak(uE);
+		                  }
+		                } catch(_vcle) {}
+		              };
+		            } catch(_aele) {}
+		            return; // 等待 voiceschanged 後再播放
+		          }
+		          var chosenNowE = pickEnVoice(voicesE);
+		          if (chosenNowE) { u.voice = chosenNowE; u.lang = chosenNowE.lang; }
+		          if (isFirefox) { u.rate = 0.95; u.pitch = 1.02; }
+		        } catch(_ve) {}
+		      }
 		      syn.speak(u);
 		    } catch (err) {
-		      try { console.warn('[TTS] 朗讀失敗', err); } catch (_e) {}
+		      // 靜默失敗
 		    }
 		  }
 		  document.addEventListener('click', handleClick);
