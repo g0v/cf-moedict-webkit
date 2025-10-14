@@ -697,6 +697,33 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 			});
 		})();
 		</script>
+
+		<!-- 翻譯朗讀（TTS）事件委派：複刻原專案行為，僅在支援時啟用 -->
+		<script>
+		(function(){
+		  function handleClick(e){
+		    var el = e.target && e.target.closest ? e.target.closest('.fw_def') : null;
+		    if (!el) return;
+		    try {
+		      var syn = window.speechSynthesis;
+		      var Utter = window.SpeechSynthesisUtterance;
+		      if (!syn || !Utter) return; // 靜默降級
+		      var label = el.getAttribute('data-label') || '英';
+		      var text = el.getAttribute('data-text') || '';
+		      if (!text) return;
+		      // 與 src/tts-utils.ts 的 getLanguageCode 對應
+		      var langMap = { '英': 'en-US', '法': 'fr-FR', '德': 'de-DE' };
+		      var u = new Utter(text);
+		      u.lang = langMap[label] || 'en-US';
+		      u.volume = 1.0; u.rate = 1.0;
+		      syn.speak(u);
+		    } catch (err) {
+		      try { console.warn('[TTS] 朗讀失敗', err); } catch (_e) {}
+		    }
+		  }
+		  document.addEventListener('click', handleClick);
+		})();
+		</script>
 </head>
 <body>
 	${bodyHTML}

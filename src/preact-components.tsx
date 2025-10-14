@@ -8,6 +8,7 @@ import AUDIO_MAP from './dict-concised.audio';
 import { NavbarComponent } from './navbar-component';
 import { rightAngle } from './ruby2hruby';
 import { decorateRuby, formatBopomofo, formatPinyin } from './bopomofo-pinyin-utils';
+import { cleanTextForTTS } from './tts-utils';
 
 /**
  * 根據語言獲取音檔 URL
@@ -170,30 +171,48 @@ export function DictionaryPage(props: DictionaryPageProps) {
 			})}
 
 			{/* 翻譯 */}
-			{translation && (
-				<div className="xrefs">
-					<span className="translation">
-						{translation.English && (
-							<div className="xref-line">
-								<span className="fw_lang">英</span>
-								<span className="fw_def">{formatTranslation(translation.English)}</span>
-							</div>
-						)}
-						{translation.Deutsch && (
-							<div className="xref-line">
-								<span className="fw_lang">德</span>
-								<span className="fw_def">{formatTranslation(translation.Deutsch)}</span>
-							</div>
-						)}
-						{translation.francais && (
-							<div className="xref-line">
-								<span className="fw_lang">法</span>
-								<span className="fw_def">{formatTranslation(translation.francais)}</span>
-							</div>
-						)}
-					</span>
-				</div>
-			)}
+            {translation && (
+                <div className="xrefs">
+                    <span className="translation">
+                        {translation.English && (
+                            <div className="xref-line">
+                                <span className="fw_lang">英</span>
+                                <span
+                                    className="fw_def"
+                                    data-label="英"
+                                    data-text={cleanTextForTTS(translation.English)}
+                                >
+                                    {formatTranslation(translation.English)}
+                                </span>
+                            </div>
+                        )}
+                        {translation.Deutsch && (
+                            <div className="xref-line">
+                                <span className="fw_lang">德</span>
+                                <span
+                                    className="fw_def"
+                                    data-label="德"
+                                    data-text={cleanTextForTTS(translation.Deutsch)}
+                                >
+                                    {formatTranslation(translation.Deutsch)}
+                                </span>
+                            </div>
+                        )}
+                        {translation.francais && (
+                            <div className="xref-line">
+                                <span className="fw_lang">法</span>
+                                <span
+                                    className="fw_def"
+                                    data-label="法"
+                                    data-text={cleanTextForTTS(translation.francais)}
+                                >
+                                    {formatTranslation(translation.francais)}
+                                </span>
+                            </div>
+                        )}
+                    </span>
+                </div>
+            )}
 
 			{/* 跨語言對照 */}
 			{xrefs && xrefs.length > 0 && (
