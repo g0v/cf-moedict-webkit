@@ -1053,13 +1053,14 @@ async function buildTooltipHTML(id: string, lang: DictionaryLang, env: Env): Pro
         trs: het.trs
       });
 
-      // 生成標題 HTML，包含正確的 hruby 結構
+      // 生成標題 HTML，包含正確的 hruby 結構和超連結（對齊主頁面樣式）
       let titleHTML = '';
       if (rubyData.ruby) {
         const hruby = rightAngle(rubyData.ruby);
         titleHTML = `<span class="h1">${hruby}</span>`;
       } else {
-        titleHTML = `<span class="h1">${escapeHtml(title)}</span>`;
+        // 單字也要有超連結，對齊多字詞的表現
+        titleHTML = `<span class="h1"><a href="./#${escapeHtml(title)}">${escapeHtml(title)}</a></span>`;
       }
 
       // 又音標記
@@ -1082,7 +1083,7 @@ async function buildTooltipHTML(id: string, lang: DictionaryLang, env: Env): Pro
     if (def) {
       return `
         <div class="title" data-title="${escapeHtml(id)}">
-          <span class="h1">${escapeHtml(id)}</span>
+          <a href="./#${escapeHtml(id)}">${escapeHtml(id)}</a>
         </div>
         <div class="entry">
           <div class="entry-item">
@@ -1095,7 +1096,7 @@ async function buildTooltipHTML(id: string, lang: DictionaryLang, env: Env): Pro
   // 找不到
   return `
     <div class="title" data-title="${escapeHtml(id)}">
-      <span class="h1">${escapeHtml(id)}</span>
+      <a href="./#${escapeHtml(id)}">${escapeHtml(id)}</a>
     </div>
     <div class="entry">
       <div class="entry-item">

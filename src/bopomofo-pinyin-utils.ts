@@ -105,12 +105,12 @@ export function decorateRuby(params: {
 	const rCjkOne = /^(?:[\uD800-\uDBFF][\uDC00-\uDFFF]|[^？，、；！。－—<>])$/;
 	const rCjkG = /([\uD800-\uDBFF][\uDC00-\uDFFF]|[^？，、；！。－—<>])/g;
 
-    if (rCjkOne.test(title)) {
-        ruby = `<div class="stroke" title="筆順動畫"><rb>${title}</rb></div>`;
-    } else {
+    // if (rCjkOne.test(title)) {
+    //     ruby = `<div class="stroke" title="筆順動畫"><rb>${title}</rb></div>`;
+    //} else {
         // 構造 <rb> 基底：將每個字分拆，保留連結，並包在 <rb> 內
         ruby = buildRubyBases(title);
-    }
+    //}
 
 	// 處理拼音
 	let p = processedPinyin
@@ -203,7 +203,7 @@ function buildRubyBases(titleHtml: string): string {
         $('#wrap').contents().each((_: any, node: any) => {
             if (node.type === 'text') {
                 const text = (node.data || '').replace(/\s+/g, '');
-                for (const ch of text) out.push(`<rb>${ch}</rb>`);
+                for (const ch of text) out.push(`<rb><a href="./#${ch}">${ch}</a></rb>`);
             } else if (node.type === 'tag' && node.name === 'a') {
                 const href = $(node).attr('href') || '';
                 const text = $(node).text();
