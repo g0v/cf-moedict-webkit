@@ -17,6 +17,22 @@ export async function handlePageRequest(url: URL, env: Env): Promise<Response> {
 
 	console.log('🔍 [HandlePageRequest] 查詢:', fixedText, 'lang:', lang);
 
+	// 提供簡介框（tooltip）資料端點
+	try {
+		const tooltip = url.searchParams.get('tooltip');
+		if (tooltip === '1') {
+			const idParam = url.searchParams.get('id') || '';
+			const normalizedId = normalizeLinkId(decodeURIComponent(idParam));
+			const html = await buildTooltipHTML(normalizedId, lang, env);
+			return new Response(html, {
+				headers: {
+					'Content-Type': 'text/html; charset=utf-8',
+					...getCORSHeaders(),
+				},
+			});
+		}
+	} catch (_tooltipErr) {}
+
 	// 處理字詞紀錄簿路由
 	if (text === '=*' || url.pathname === '/=*') {
 		console.log('🔍 [HandlePageRequest] 處理字詞紀錄簿頁面');
@@ -698,6 +714,124 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 		})();
 		</script>
 
+		<!-- 文字簡介框（Tooltip） - 複刻原專案行為，使用本專案端點載入內容 -->
+		<script>
+		(function(){
+		  console.log('[Tooltip] init');
+		  var tooltipEl = null;
+		  var cache = Object.create(null);
+		  var showTimer = null, hideTimer = null;
+		  function createTooltip(){
+		    if (!tooltipEl) {
+		      tooltipEl = document.createElement('div');
+		      tooltipEl.className = 'ui-tooltip prefer-pinyin-true';
+		      tooltipEl.style.position = 'absolute';
+		      tooltipEl.style.display = 'none';
+		      tooltipEl.style.zIndex = '9999';
+		      document.body.appendChild(tooltipEl);
+		      try { console.log('[Tooltip] tooltip element created and appended'); } catch(_l) {}
+		      // 防抖：滑入 tooltip 時不要隱藏；滑出時延遲隱藏
+		      tooltipEl.addEventListener('mouseenter', function(){
+		        if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+		        try { console.log('[Tooltip] mouseenter tooltip'); } catch(_l) {}
+		      });
+		      tooltipEl.addEventListener('mouseleave', function(){
+		        if (hideTimer) { clearTimeout(hideTimer); }
+		        hideTimer = setTimeout(function(){ if (tooltipEl) { tooltipEl.style.display = 'none'; try { console.log('[Tooltip] hide tooltip (leave tooltip)'); } catch(_l) {} } }, 120);
+		        try { console.log('[Tooltip] mouseleave tooltip'); } catch(_l) {}
+		      });
+		    }
+		    return tooltipEl;
+		  }
+		  function clamp(val, min, max){ return Math.max(min, Math.min(max, val)); }
+		  function positionNear(x, y){
+		    var el = createTooltip();
+		    var vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+		    var vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
+		    var w = el.offsetWidth || 300;
+		    var h = el.offsetHeight || 150;
+		    var nx = clamp(x + 12, 8, vw - w - 8);
+		    var ny = clamp(y + 12, 8, vh - h - 8);
+		    el.style.left = nx + 'px';
+		    el.style.top = ny + 'px';
+		    try { console.log('[Tooltip] positioned at', nx, ny, 'size', w, h); } catch(_l) {}
+		  }
+		  function normalizeHref(href){
+		    try { href = String(href || ''); } catch(_){ href = ''; }
+		    return href.replace(/^(\\\.\\\/)?#?['!:~]?/, '');
+		  }
+		  function fetchTooltip(id, cb){
+		    if (!id) return;
+		    if (cache[id]) { try { console.log('[Tooltip] cache hit', id); } catch(_l) {} cb(cache[id]); return; }
+		    try {
+		      var u = new URL(window.location.href);
+		      u.searchParams.set('tooltip', '1');
+		      u.searchParams.set('id', id);
+		      var url = u.toString();
+		      try { console.log('[Tooltip] fetch', id, url); } catch(_l) {}
+		      fetch(url, { headers: { 'Accept': 'text/html' } })
+		        .then(function(r){ return r.text(); })
+		        .then(function(html){ cache[id] = html; try { console.log('[Tooltip] fetched', id, 'len', (html||'').length); } catch(_l) {} cb(html); })
+		        .catch(function(err){ try { console.log('[Tooltip] fetch error', err); } catch(_l) {} });
+		    } catch(err) { try { console.log('[Tooltip] build url error', err); } catch(_l) {} }
+		  }
+		  document.addEventListener('mouseover', function(ev){
+		    console.log('[Tooltip] mouseover');
+		    var a = ev.target && ev.target.closest ? ev.target.closest('.result a[href]:not(.xref)') : null;
+		    if (!a && ev.target && ev.target.closest) {
+		      var anyA = ev.target.closest('a[href]');
+		      if (anyA && anyA.closest && anyA.closest('.result')) {
+		        a = anyA;
+		        try { console.log('[Tooltip] fallback anchor found', a.getAttribute('href')); } catch(_l) {}
+		      }
+		    }
+		    if (!a) { try { console.log('[Tooltip] no anchor, skip'); } catch(_l) {} return; }
+		    try { console.log('[Tooltip] mouseover anchor', a.getAttribute('href')); } catch(_l) {}
+		    if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+		    if (showTimer) { clearTimeout(showTimer); }
+		    var x = ev.pageX, y = ev.pageY;
+		    showTimer = setTimeout(function(){
+		      var rawHref = a.getAttribute('href');
+		      try { console.log('[Tooltip] raw href', rawHref); } catch(_l) {}
+		      var id = normalizeHref(rawHref);
+		      try { console.log('[Tooltip] normalized id', id); } catch(_l) {}
+		      if (!id) { try { console.log('[Tooltip] empty id, skip'); } catch(_l) {} return; }
+		      try { console.log('[Tooltip] id ok, proceed'); } catch(_l) {}
+		      var el = createTooltip();
+		      // 先顯示載入中，讓使用者看到提示框
+		      el.innerHTML = '<div class="entry"><div class="entry-item"><div class="def">載入中…</div></div></div>';
+		      el.style.display = 'block';
+		      try { console.log('[Tooltip] display loading'); } catch(_l) {}
+		      positionNear(x, y);
+		      fetchTooltip(id, function(html){
+		        el.innerHTML = html || '';
+		        el.style.display = 'block';
+		        try { console.log('[Tooltip] content set and shown'); } catch(_l) {}
+		        positionNear(x, y);
+		      });
+		    }, 100);
+		  });
+		  document.addEventListener('mouseout', function(ev){
+		    console.log('[Tooltip] mouseout');
+		    var from = ev.target && ev.target.closest ? ev.target.closest('.result a[href]:not(.xref)') : null;
+		    if (!from && ev.target && ev.target.closest) {
+		      var anyFrom = ev.target.closest('a[href]');
+		      if (anyFrom && anyFrom.closest && anyFrom.closest('.result')) {
+		        from = anyFrom;
+		        try { console.log('[Tooltip] fallback from anchor', from.getAttribute('href')); } catch(_l) {}
+		      }
+		    }
+		    // 若移入 tooltip，則不要隱藏
+		    var toTooltip = ev.relatedTarget && ev.relatedTarget.closest ? ev.relatedTarget.closest('.ui-tooltip') : null;
+		    if (toTooltip) { try { console.log('[Tooltip] moving into tooltip, keep shown'); } catch(_l) {} return; }
+		    if (!from) return;
+		    if (showTimer) { clearTimeout(showTimer); showTimer = null; }
+		    if (hideTimer) { clearTimeout(hideTimer); }
+		    hideTimer = setTimeout(function(){ if (tooltipEl) { tooltipEl.style.display = 'none'; try { console.log('[Tooltip] hide tooltip'); } catch(_l) {} } }, 100);
+		  });
+		})();
+		</script>
+
 		<!-- 翻譯朗讀（TTS）事件委派：複刻原專案行為，僅在支援時啟用 -->
 		<script>
 		(function(){
@@ -872,4 +1006,76 @@ function escapeHtml(text: string): string {
 		.replace(/>/g, '&gt;')
 		.replace(/"/g, '&quot;')
 		.replace(/'/g, '&#39;');
+}
+
+/**
+ * 將連結中的字詞 ID 正規化：去除語言前綴符號等
+ */
+function normalizeLinkId(raw: string): string {
+  try {
+    let id = String(raw || '');
+    id = id.replace(/^['!:~]/, '');
+    id = id.replace(/^\.(?:\/)?/, '');
+    id = id.replace(/^#/, '');
+    return id;
+  } catch(_e) { return raw || ''; }
+}
+
+/**
+ * 建立簡介框 HTML（盡量複刻原專案結構，但用現有資料）
+ */
+async function buildTooltipHTML(id: string, lang: DictionaryLang, env: Env): Promise<string> {
+  try {
+    // 先嘗試完整詞條
+    const entry = await lookupDictionaryEntry(id, lang, env);
+    if (entry) {
+      // 使用已有的 Preact render 但以 Result 結構簡化會較大；這裡組裝精簡版
+      const title = entry.title || id;
+      const het = (entry.heteronyms && entry.heteronyms[0]) || {} as any;
+      const zhuyin = het.bopomofo || '';
+      const pinyin = het.pinyin || '';
+      const defs = (het.definitions || []).slice(0, 5);
+      const items = defs.map((d: any) => `<li>${escapeHtml(String((d.def || '')).replace(/<[^>]*>/g, ''))}</li>`).join('');
+      const youyinParts: string[] = [];
+      if (pinyin) youyinParts.push(escapeHtml(String(pinyin)));
+      if (zhuyin) youyinParts.push(escapeHtml(String(zhuyin)));
+      const youyinHTML = youyinParts.length ? `<small class="youyin">${youyinParts.join(' · ')}</small>` : '';
+      return `
+        <div class="title" data-title="${escapeHtml(title)}">
+          <span class="h1">${escapeHtml(title)}</span>
+          ${youyinHTML}
+        </div>
+        <div class="entry">
+          <div class="entry-item">
+            <ol>${items}</ol>
+          </div>
+        </div>
+      `;
+    }
+    // 若無完整詞條，嘗試單字/分字定義
+    const def = await getDefinition(lang, id, env);
+    if (def) {
+      return `
+        <div class="title" data-title="${escapeHtml(id)}">
+          <span class="h1">${escapeHtml(id)}</span>
+        </div>
+        <div class="entry">
+          <div class="entry-item">
+            <div class="def">${escapeHtml(String(def).replace(/<[^>]*>/g, ''))}</div>
+          </div>
+        </div>
+      `;
+    }
+  } catch(_e) {}
+  // 找不到
+  return `
+    <div class="title" data-title="${escapeHtml(id)}">
+      <span class="h1">${escapeHtml(id)}</span>
+    </div>
+    <div class="entry">
+      <div class="entry-item">
+        <div class="def">找不到內容</div>
+      </div>
+    </div>
+  `;
 }
