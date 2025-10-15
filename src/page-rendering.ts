@@ -6,6 +6,8 @@ import { DictionaryPage, SearchResultsPage, NotFoundPage } from './preact-compon
 import { NavbarComponent } from './navbar-component';
 import { AboutPage } from './about-page';
 import { StarredPageSSR } from './starred-page';
+import { decorateRuby } from './bopomofo-pinyin-utils';
+import { rightAngle } from './ruby2hruby';
 
 /**
  * 處理頁面渲染請求
@@ -1022,6 +1024,13 @@ function normalizeLinkId(raw: string): string {
 }
 
 /**
+ * 移除 HTML 標籤，保留純文字（複製自 preact-components.tsx）
+ */
+function untag(input: string): string {
+	return input.replace(/<[^>]*>/g, '');
+}
+
+/**
  * 建立簡介框 HTML（盡量複刻原專案結構，但用現有資料）
  */
 async function buildTooltipHTML(id: string, lang: DictionaryLang, env: Env): Promise<string> {
@@ -1032,17 +1041,33 @@ async function buildTooltipHTML(id: string, lang: DictionaryLang, env: Env): Pro
       // 使用已有的 Preact render 但以 Result 結構簡化會較大；這裡組裝精簡版
       const title = entry.title || id;
       const het = (entry.heteronyms && entry.heteronyms[0]) || {} as any;
-      const zhuyin = het.bopomofo || '';
-      const pinyin = het.pinyin || '';
       const defs = (het.definitions || []).slice(0, 5);
-      const items = defs.map((d: any) => `<li>${escapeHtml(String((d.def || '')).replace(/<[^>]*>/g, ''))}</li>`).join('');
-      const youyinParts: string[] = [];
-      if (pinyin) youyinParts.push(escapeHtml(String(pinyin)));
-      if (zhuyin) youyinParts.push(escapeHtml(String(zhuyin)));
-      const youyinHTML = youyinParts.length ? `<small class="youyin">${youyinParts.join(' · ')}</small>` : '';
+      const items = defs.map((d: any) => `<li>${escapeHtml(untag(String(d.def || '')))}</li>`).join('');
+
+      // 使用 decorateRuby 和 rightAngle 生成正確的注音拼音顯示
+      const rubyData = decorateRuby({
+        LANG: lang,
+        title: title,
+        bopomofo: het.bopomofo,
+        pinyin: het.pinyin,
+        trs: het.trs
+      });
+
+      // 生成標題 HTML，包含正確的 hruby 結構
+      let titleHTML = '';
+      if (rubyData.ruby) {
+        const hruby = rightAngle(rubyData.ruby);
+        titleHTML = `<span class="h1">${hruby}</span>`;
+      } else {
+        titleHTML = `<span class="h1">${escapeHtml(title)}</span>`;
+      }
+
+      // 又音標記
+      const youyinHTML = rubyData.youyin ? `<small class="youyin">${escapeHtml(untag(rubyData.youyin))}</small>` : '';
+
       return `
         <div class="title" data-title="${escapeHtml(title)}">
-          <span class="h1">${escapeHtml(title)}</span>
+          ${titleHTML}
           ${youyinHTML}
         </div>
         <div class="entry">
@@ -1061,7 +1086,7 @@ async function buildTooltipHTML(id: string, lang: DictionaryLang, env: Env): Pro
         </div>
         <div class="entry">
           <div class="entry-item">
-            <div class="def">${escapeHtml(String(def).replace(/<[^>]*>/g, ''))}</div>
+            <div class="def">${escapeHtml(untag(String(def)))}</div>
           </div>
         </div>
       `;
