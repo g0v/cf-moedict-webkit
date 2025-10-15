@@ -27,18 +27,30 @@
 
 ### 2. 待修復問題
 
-- [ ] **HTML 標籤清理問題**
-  - [ ] 修復 tooltip 內容仍顯示 HTML 標籤的問題
-  - [ ] 確保 `buildTooltipHTML` 中的 `untag` 函數正確執行
-  - [ ] 檢查 `escapeHtml` 和 `replace(/<[^>]*>/g, '')` 的執行順序
-  - [ ] 參考當前專案: `cf-moedict-webkit/src/page-rendering.ts` 第1038行, `buildTooltipHTML` 函數
 
-- [ ] **注音拼音顯示格式問題**
-  - [ ] 修復注音應為直書顯示，而非橫書
-  - [ ] 實現注音與主文字排版一致（yin, diao 位置）
-  - [ ] 使用原專案的 hruby 結構和 CSS 樣式
-  - [ ] 參考原專案: `moedict-webkit/sass/_result.scss` 第422-439行, hruby 樣式
-  - [ ] 參考當前專案: `cf-moedict-webkit/src/preact-components.tsx` 第58-64行, `decorateRuby` 和 `rightAngle` 使用
+- [x] **Tooltip 標題超連結對齊問題**
+  - [x] 修復單字 tooltip 標題缺少超連結的問題
+  - [x] 確保所有 tooltip 標題都與主頁面保持一致的超連結樣式
+  - [x] 保留多字詞的超連結表現，並對齊到單字
+  - [x] 修改 `buildTooltipHTML` 中的標題生成邏輯
+  - [x] 參考當前專案: `cf-moedict-webkit/src/preact-components.tsx` 第69-89行, 主頁面標題結構
+
+- [x] **注音拼音顯示格式問題**
+  - [x] 修復注音應為直書顯示，而非橫書
+  - [x] 實現注音與主文字排版一致（yin, diao 位置）
+  - [x] 使用原專案的 hruby 結構和 CSS 樣式
+  - [x] 參考原專案: `moedict-webkit/sass/_result.scss` 第422-439行, hruby 樣式
+  - [x] 參考當前專案: `cf-moedict-webkit/src/preact-components.tsx` 第58-64行, `decorateRuby` 和 `rightAngle` 使用
+
+- [ ] **主字樣式問題**
+  - [ ] 修復 tooltip 標題中的超連結樣式，對齊主頁面主字樣式
+  - [ ] 超連結顏色改為黑色而非藍色
+  - [ ] 字體家族對齊主字，優先使用楷書字體
+  - [ ] hover 時移除 underline 效果
+  - [ ] 參考主字 CSS: `h1.title` 樣式定義
+  - [ ] 參考當前專案: `cf-moedict-webkit/src/page-rendering.ts` 第413-422行, 主字標題樣式
+
+
 
 - [ ] **Tooltip 定位邏輯問題**
   - [ ] 實現當滑鼠在頁面下方時，tooltip 顯示在文字上方
