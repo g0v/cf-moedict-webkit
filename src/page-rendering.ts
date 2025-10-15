@@ -235,6 +235,22 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 	<script>
 		// 統一處理 hash 路由和首頁重定向
 		(function() {
+			// 導向收藏頁的 hash 處理：攔截 #=* 並改為 /=*
+			(function(){
+				function goStarred(){ if (window.location.pathname !== '/=*') { window.location.href = '/=*'; } }
+				function handleHashStar(){ if (window.location.hash === '#=*') { try { history.replaceState(null, '', '/=*'); } catch(_e) {} goStarred(); } }
+				document.addEventListener('click', function(e){
+					var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+					if (!a) return;
+					try {
+						var href = a.getAttribute('href');
+						var u = new URL(href, window.location.href);
+						if (u.hash === '#=*') { e.preventDefault(); goStarred(); }
+					} catch(_url){}
+				});
+				window.addEventListener('hashchange', handleHashStar);
+				if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', handleHashStar, { once: true }); } else { handleHashStar(); }
+			})();
 			if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
 				// 優先處理 hash 路由
 				if (window.location.hash && window.location.hash !== '#') {
