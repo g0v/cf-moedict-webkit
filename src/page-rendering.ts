@@ -139,7 +139,7 @@ function generateAboutHTMLWrapper(bodyHTML: string): string {
 
 	<!-- 圖標和樣式 -->
 	<link rel="apple-touch-icon" href="${R2_ENDPOINT}/images/icon.png">
-	<link rel="shortcut icon" type="image/x-icon" href="${R2_ENDPOINT}/favicon.ico">
+	<link rel="shortcut icon" type="image/x-icon" href="${R2_ENDPOINT}/favicon.ico?v=20251016">
 	<link href="${R2_ENDPOINT}/styles.css" rel="stylesheet">
 </head>
 <body id="moedict" class="about web">
@@ -370,7 +370,7 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 
 	<!-- 圖標和搜尋 -->
 	<link rel="apple-touch-icon" href="${R2_ENDPOINT}/images/icon.png">
-	<link rel="shortcut icon" type="image/x-icon" href="${R2_ENDPOINT}/favicon.ico">
+	<link rel="shortcut icon" type="image/x-icon" href="${R2_ENDPOINT}/favicon.ico?v=20251016">
 	<link rel="search" type="application/opensearchdescription+xml" href="${R2_ENDPOINT}/opensearch/moedict.xml" title="萌典華語">
 
 	<!-- 字體預載入 (直接從 R2 端點載入) -->
