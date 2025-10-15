@@ -1070,8 +1070,35 @@ async function buildTooltipHTML(id: string, lang: DictionaryLang, env: Env): Pro
       // 使用已有的 Preact render 但以 Result 結構簡化會較大；這裡組裝精簡版
       const title = entry.title || id;
       const het = (entry.heteronyms && entry.heteronyms[0]) || {} as any;
-      const defs = (het.definitions || []).slice(0, 5);
-      const items = defs.map((d: any) => `<li>${escapeHtml(untag(String(d.def || '')))}</li>`).join('');
+      const defs = (het.definitions || []);
+
+      // 依詞性分組（復刻原專案：groupBy('type', definitions)）
+      const groupMap = new Map<string, any[]>();
+      for (const d of defs as any[]) {
+        const key = String((d && d.type) || '');
+        if (!groupMap.has(key)) groupMap.set(key, []);
+        groupMap.get(key)!.push(d);
+      }
+
+      function renderPosLabels(typeStr: string): string {
+        if (!typeStr) return '';
+        const labels = String(typeStr).split(',').map(s => s.trim()).filter(Boolean);
+        if (!labels.length) return '';
+        return labels
+          .map(l => `<span class="part-of-speech">${escapeHtml(untag(l))}</span>`) // 紅底白字標籤（樣式已存在）
+          .join('&nbsp;');
+      }
+
+      const groupedItemsHTML = Array.from(groupMap.entries()).map(([typeStr, list]) => {
+        const posHTML = renderPosLabels(typeStr);
+        const olHTML = (list as any[])
+          .map(d => {
+            const defText = escapeHtml(untag(String(d && d.def || '')));
+            return `<li><p class="definition"><span class="def">${defText}</span></p></li>`;
+          })
+          .join('');
+        return `<div class="entry-item">${posHTML ? posHTML : ''}<ol>${olHTML}</ol></div>`;
+      }).join('');
 
       // 使用 decorateRuby 和 rightAngle 生成正確的注音拼音顯示
       const rubyData = decorateRuby({
@@ -1100,11 +1127,7 @@ async function buildTooltipHTML(id: string, lang: DictionaryLang, env: Env): Pro
           ${titleHTML}
           ${youyinHTML}
         </div>
-        <div class="entry">
-          <div class="entry-item">
-            <ol>${items}</ol>
-          </div>
-        </div>
+        <div class="entry">${groupedItemsHTML}</div>
       `;
     }
     // 若無完整詞條，嘗試單字/分字定義
