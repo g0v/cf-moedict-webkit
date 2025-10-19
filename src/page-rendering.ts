@@ -39,7 +39,7 @@ export async function handlePageRequest(url: URL, env: Env): Promise<Response> {
 	if (text === '=*' || url.pathname === '/=*') {
 		console.log('🔍 [HandlePageRequest] 處理字詞紀錄簿頁面');
 		const bodyHTML = renderToString(StarredPageSSR());
-		const html = generateHTMLWrapper('字詞紀錄簿', bodyHTML, lang);
+		const html = generateHTMLWrapper('字詞紀錄簿', bodyHTML, lang, env);
 
 		return new Response(html, {
 			headers: {
@@ -57,7 +57,7 @@ export async function handlePageRequest(url: URL, env: Env): Promise<Response> {
 			// 找到完整詞條，渲染字典頁面
 			console.log('✅ [HandlePageRequest] 找到詞條:', entry.title);
 			const bodyHTML = renderToString(DictionaryPage({ entry, text: fixedText, lang }));
-			const html = generateHTMLWrapper(fixedText, bodyHTML, lang);
+			const html = generateHTMLWrapper(fixedText, bodyHTML, lang, env);
 
 			return new Response(html, {
 				headers: {
@@ -83,7 +83,7 @@ export async function handlePageRequest(url: URL, env: Env): Promise<Response> {
 			// 找到部分結果
 			console.log('✅ [HandlePageRequest] 找到', segments.length, '個分字結果');
 			const bodyHTML = renderToString(SearchResultsPage({ text: fixedText, segments }));
-			const html = generateHTMLWrapper(fixedText, bodyHTML, lang);
+			const html = generateHTMLWrapper(fixedText, bodyHTML, lang, env);
 
 			return new Response(html, {
 				headers: {
@@ -96,7 +96,7 @@ export async function handlePageRequest(url: URL, env: Env): Promise<Response> {
 		// 3. 完全找不到
 		console.log('❌ [HandlePageRequest] 完全找不到結果');
 		const bodyHTML = renderToString(NotFoundPage({ text: fixedText }));
-		const html = generateHTMLWrapper(fixedText, bodyHTML, lang);
+		const html = generateHTMLWrapper(fixedText, bodyHTML, lang, env);
 
 		return new Response(html, {
 			status: 404,
@@ -123,9 +123,17 @@ export async function handlePageRequest(url: URL, env: Env): Promise<Response> {
 /**
  * 生成關於頁面 HTML 包裝
  */
-function generateAboutHTMLWrapper(bodyHTML: string): string {
-	// R2 公開端點
-	const R2_ENDPOINT = 'https://pub-1808868ac1e14b13abe9e2800cace884.r2.dev';
+function requireAssetBaseUrl(env: Env): string {
+	const base = env.ASSET_BASE_URL;
+	if (!base || !base.trim()) {
+		throw new Error('未設定 ASSET_BASE_URL，請於 wrangler.jsonc 的 vars.ASSET_BASE_URL 指定公開端點');
+	}
+	return base.replace(/\/$/, '');
+}
+
+function generateAboutHTMLWrapper(bodyHTML: string, env: Env): string {
+	// R2 公開端點（由環境變數提供）
+	const R2_ENDPOINT = requireAssetBaseUrl(env);
 
 	return `<!DOCTYPE html>
 <html lang="zh-Hant" xml:lang="zh-Hant">
@@ -189,8 +197,8 @@ export async function handleAboutPageRequest(url: URL, env: Env): Promise<Respon
 	console.log('🔍 [HandleAboutPageRequest] 處理關於頁面請求');
 
 	try {
-		const bodyHTML = renderToString(AboutPage());
-		const html = generateAboutHTMLWrapper(bodyHTML);
+		const bodyHTML = renderToString(AboutPage({ assetBaseUrl: requireAssetBaseUrl(env) }));
+		const html = generateAboutHTMLWrapper(bodyHTML, env);
 
 		return new Response(html, {
 			headers: {
@@ -215,12 +223,12 @@ export async function handleAboutPageRequest(url: URL, env: Env): Promise<Respon
 /**
  * 生成 HTML 包裝
  */
-function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLang): string {
+function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLang, env: Env): string {
 	const title = TITLE_OF[lang];
 	const pageTitle = `${text} - ${title}萌典`;
 
-	// R2 公開端點
-	const R2_ENDPOINT = 'https://pub-1808868ac1e14b13abe9e2800cace884.r2.dev';
+	// R2 公開端點（由環境變數提供）
+	const R2_ENDPOINT = requireAssetBaseUrl(env);
 
 	return `<!DOCTYPE html>
 <html lang="zh-Hant">

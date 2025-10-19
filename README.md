@@ -49,6 +49,18 @@ curl "http://localhost:8787/萌.png"
 curl "http://localhost:8787/萌"
 ```
 
+### 設定資產端點（ASSET_BASE_URL）
+
+- 本專案的 CSS/JS/圖片/字體會透過 `ASSET_BASE_URL` 從 R2 公開端點載入。
+- 請先複製範本設定，並填上你自己的 bucket 與公開端點：
+
+```bash
+cp wrangler.jsonc.example wrangler.jsonc
+# 編輯 wrangler.jsonc → vars.ASSET_BASE_URL: "https://<your-pub-id>.r2.dev"
+```
+
+- 若未設定 `ASSET_BASE_URL`，伺服器端渲染會直接報錯提示。
+
 ### 部署到 CloudFlare
 
 #### 1. 設置 CloudFlare 認證
@@ -70,16 +82,14 @@ wrangler r2 bucket create moedict-dictionary-preview
 ```
 
 #### 3. 更新配置
-編輯 `wrangler.jsonc`，將 KV namespace ID 替換為實際值：
+- 以 `wrangler.jsonc.example` 為範本建立 `wrangler.jsonc`
+- 在 `vars` 設定你的公開資產端點：
+
 ```jsonc
 {
-  "kv_namespaces": [
-    {
-      "binding": "DICTIONARY",
-      "id": "your-actual-kv-namespace-id",
-      "preview_id": "your-actual-kv-preview-namespace-id"
-    }
-  ]
+  "vars": {
+    "ASSET_BASE_URL": "https://<your-pub-id>.r2.dev"
+  }
 }
 ```
 
@@ -144,6 +154,10 @@ npx wrangler dev --remote
 curl "http://localhost:8787/萌.json"      # 字典查詢
 curl "http://localhost:8787/萌.png"        # 圖片生成
 curl "http://localhost:8787/萌"            # 頁面渲染
+curl "http://localhost:8787/about.html"   # 關於頁面
+
+# 驗證靜態資源是否走 ASSET_BASE_URL：
+# 打開瀏覽器 devtools → Network，確認 CSS/JS/字體/圖片皆從你的 r2.dev 載入
 ```
 
 ### 部置
@@ -179,6 +193,13 @@ wrangler tail --format=pretty
 - `css/` 目錄 (樣式表)
 - `js/` 目錄 (JavaScript 檔案)
 - `images/` 目錄 (圖片資源)
+
+可用 rclone 上傳（需先 `rclone config` 設定 Cloudflare R2，endpoint 形如 `https://<account-id>.r2.cloudflarestorage.com`）：
+
+```bash
+# 依你的 remote 名稱調整，例如 r2:
+rclone sync assets r2:moedict-assets
+```
 
 ## 故障排除
 

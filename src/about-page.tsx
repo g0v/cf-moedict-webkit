@@ -6,9 +6,9 @@
 /**
  * 關於頁面組件
  */
-export function AboutPage() {
-	// R2 公開端點
-	const R2_ENDPOINT = 'https://pub-1808868ac1e14b13abe9e2800cace884.r2.dev';
+export function AboutPage({ assetBaseUrl }: { assetBaseUrl: string }) {
+	// R2 公開端點（由外部注入）
+	const R2_ENDPOINT = assetBaseUrl.replace(/\/$/, '');
 
 	return (
 		<div className="about-page">
@@ -46,8 +46,8 @@ export function AboutPage() {
 				</ul>
 			</div>
 
-			{/* 主要內容 */}
-			<center>
+		{/* 主要內容 */}
+		<div style={{ textAlign: 'center' }}>
 				<img
 					style={{ marginTop: '60px', background: 'white' }}
 					title="萌典首頁"
@@ -56,7 +56,7 @@ export function AboutPage() {
 					className="logo"
 					alt="萌典 Logo"
 				/>
-			</center>
+		</div>
 
 			<div className="content">
 				<p>
