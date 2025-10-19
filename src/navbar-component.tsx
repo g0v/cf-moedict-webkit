@@ -155,60 +155,69 @@ export function NavbarComponent(props: NavbarProps) {
 					</li>
 				</ul>
 
-				{/* 右側區域 - 關於按鈕 */}
-				<ul className="nav pull-right hidden-xs">
-					<li>
-						<a href="about.html" title="關於本站">
-							<span className="iconic-circle">
-								<i className="icon-info"></i>
-							</span>
-						</a>
-					</li>
-				</ul>
+				{/* 右側區域 - 下載連結、搜尋框、社群連結 */}
+				<ul className="nav pull-right hidden-xs" style={{ display: 'flex' }}>
 
-				{/* 右側區域 - 下載連結 */}
-				<ul className="nav pull-right hidden-xs">
+					{/* Google 站內搜尋 */}
 					<li style={{ display: 'inline-block' }} className="web-inline-only">
+						<div id="gcse">
+							<span className={`lang-${currentLang}-only`}>
+								<gcse:search
+									webSearchQueryAddition={getSearchQueryAddition(currentLang)}
+								></gcse:search>
+							</span>
+						</div>
+					</li>
+
+
+					<li style={{ display: 'inline-block' }}>
 						<a
-							href="https://twitter.com/moedict"
+							href="https://racklin.github.io/moedict-desktop/download.html"
 							target="_blank"
-							title="萌典 Twitter"
+							rel="noopener noreferrer"
+							title="桌面版下載(可離線使用)"
 							style={{ color: '#ccc' }}
 						>
-							<i className="icon-twitter-sign"></i>
+							<i className="icon-download-alt"></i>
 						</a>
 					</li>
-					<li style={{ display: 'inline-block' }} className="web-inline-only">
+
+
+
+					<li style={{ display: 'inline-block' }}>
 						<a
 							href="https://play.google.com/store/apps/details?id=org.audreyt.dict.moe"
 							target="_blank"
+							rel="noopener noreferrer"
 							title="Google Play 下載"
 							style={{ color: '#ccc' }}
 						>
 							<i className="icon-android"></i>
 						</a>
 					</li>
-					<li style={{ display: 'inline-block' }} className="web-inline-only">
+					<li style={{ display: 'inline-block' }}>
 						<a
 							href="http://itunes.apple.com/app/id1434947403"
 							target="_blank"
+							rel="noopener noreferrer"
 							title="App Store 下載"
 							style={{ color: '#ccc' }}
 						>
 							<i className="icon-apple"></i>
 						</a>
 					</li>
+
+
+					<li>
+						<a href="about.html" title="關於本站">
+							<span className="iconic-circle" style={{ backgroundColor: '#400' }}>
+								<i className="icon-info"></i>
+							</span>
+						</a>
+					</li>
 				</ul>
 			</nav>
 
-			{/* Google 站內搜尋 */}
-			<div id="gcse">
-				<span className={`lang-${currentLang}-only`}>
-					<gcse:search
-						webSearchQueryAddition={getSearchQueryAddition(currentLang)}
-					></gcse:search>
-				</span>
-			</div>
 		</>
 	);
 }
