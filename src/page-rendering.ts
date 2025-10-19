@@ -668,10 +668,6 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 				position: static; /* 手機版導航列不固定 */
 			}
 
-			.navbar-fixed-top {
-				position: static; /* 手機版導航列不固定 */
-			}
-
 			.bopomofo {
 				margin-right: 0;
 				padding-right: 10px;
