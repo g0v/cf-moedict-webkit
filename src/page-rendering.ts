@@ -386,6 +386,206 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 				}
 			});
 		})();
+
+		// 星號（收藏）功能與 LocalStorage 儲存機制，含詳細 debug log
+		(function(){
+			var LOG_PREFIX = '[Star]';
+
+			// 輔助函式：統一 log 格式
+			function log(){
+				try {
+					console.log.apply(console, [LOG_PREFIX].concat(Array.prototype.slice.call(arguments)));
+				} catch(_e) {}
+			}
+			function warn(){
+				try {
+					console.warn.apply(console, [LOG_PREFIX].concat(Array.prototype.slice.call(arguments)));
+				} catch(_e) {}
+			}
+
+			// 從 DOM 的 class 取得當前語言
+			function getLang(){
+				try {
+					var m = document.documentElement.className.match(/lang-([atch])/);
+					return (m && m[1]) || 'a';
+				} catch(_e){
+					return 'a';
+				}
+			}
+
+			// 移除 HTML 標籤，保留純文字
+			function stripHtml(str){
+				try {
+					var div = document.createElement('div');
+					div.innerHTML = str || '';
+					return div.textContent || div.innerText || '';
+				} catch(_e){
+					// fallback: 簡單正則
+					return (str || '').replace(/<[^>]*>/g, '');
+				}
+			}
+
+			// LocalStorage 存取（安全包裹）
+			function lsGet(key){
+				try {
+					return localStorage.getItem(key);
+				} catch(_e){
+					warn('lsGet error', key, _e);
+					return null;
+				}
+			}
+			function lsSet(key, val){
+				try {
+					localStorage.setItem(key, val);
+				} catch(_e){
+					warn('lsSet error', key, _e);
+				}
+			}
+
+			// 統一收藏項目的字串格式："字詞"反斜線n（以文字 反斜線n 作為分隔）
+			function buildStarKey(word){
+				return '"' + word + '"' + '\\n';
+			}
+
+			// 確保 starred-{lang} 存在
+			function ensureStarred(lang){
+				var k = 'starred-' + lang;
+				var v = lsGet(k);
+				if (v == null) {
+					lsSet(k, '');
+					v = '';
+				}
+				return v;
+			}
+
+			// 檢查字詞是否已收藏
+			function hasStar(lang, word){
+				var data = ensureStarred(lang) || '';
+				var hit = data.indexOf(buildStarKey(word)) >= 0;
+				log('hasStar?', { lang: lang, word: word, hit: hit });
+				return hit;
+			}
+
+			// 加入收藏
+			function addStar(lang, word){
+				var k = 'starred-' + lang;
+				var cur = ensureStarred(lang) || '';
+				if (cur.indexOf(buildStarKey(word)) >= 0) {
+					log('addStar skip (already exists)', { lang: lang, word: word });
+					return;
+				}
+				var next = buildStarKey(word) + cur;
+				lsSet(k, next);
+				log('addStar ok', { lang: lang, word: word, len: next.length });
+			}
+
+			// 移除收藏
+			function removeStar(lang, word){
+				var k = 'starred-' + lang;
+				var cur = ensureStarred(lang) || '';
+				var next = cur.split(buildStarKey(word)).join('');
+				lsSet(k, next);
+				log('removeStar ok', { lang: lang, word: word, len: next.length });
+			}
+
+			// 更新星號圖示狀態
+			function updateStarIcon(el, isStarred){
+				try {
+					if (isStarred) {
+						el.classList.remove('icon-star-empty');
+						el.classList.add('icon-star');
+						el.setAttribute('title', '已加入記錄簿');
+					} else {
+						el.classList.remove('icon-star');
+						el.classList.add('icon-star-empty');
+						el.setAttribute('title', '加入字詞記錄簿');
+					}
+				} catch(_e) {
+					warn('updateStarIcon error', _e);
+				}
+			}
+
+			// 初始化所有星號圖示
+			function initStarIcons(){
+				try {
+					var lang = getLang();
+					var stars = document.querySelectorAll('.result .entry .star');
+					log('initStarIcons', { count: stars.length, lang: lang });
+
+					for (var i = 0; i < stars.length; i++) {
+						var el = stars[i];
+						var rawWord = (el.getAttribute('data-word') || '').trim();
+						if (!rawWord) { continue; }
+
+						// 清理 HTML 標籤
+						var word = stripHtml(rawWord);
+						if (!word) { continue; }
+
+						var starred = hasStar(lang, word);
+						updateStarIcon(el, starred);
+					}
+				} catch(_e) {
+					warn('initStarIcons error', _e);
+				}
+			}
+
+			// 頁面載入後初始化
+			if (document.readyState === 'loading') {
+				document.addEventListener('DOMContentLoaded', function(){
+					log('DOMContentLoaded');
+					initStarIcons();
+				});
+			} else {
+				log('DOM already loaded');
+				initStarIcons();
+			}
+
+			// 監聽星號點擊事件（使用事件委派）
+			document.addEventListener('click', function(e){
+				var el = e.target && e.target.closest ? e.target.closest('.result .entry .star') : null;
+				if (!el) { return; }
+
+				try {
+					e.preventDefault();
+					var lang = getLang();
+					var rawWord = (el.getAttribute('data-word') || '').trim();
+
+					// 清理 HTML 標籤，確保只儲存純文字
+					var word = stripHtml(rawWord);
+					log('star click', { lang: lang, rawWord: rawWord, cleanWord: word });
+
+					if (!word) {
+						warn('empty word on star click (after strip)');
+						return;
+					}
+
+					// 切換收藏狀態
+					var isNowStarred = !el.classList.contains('icon-star');
+					if (isNowStarred) {
+						addStar(lang, word);
+					} else {
+						removeStar(lang, word);
+					}
+					updateStarIcon(el, isNowStarred);
+
+					// 導航列按鈕提示動畫（若存在）
+					try {
+						var navBtn = document.querySelector('#btn-starred a');
+						if (navBtn) {
+							var origBg = navBtn.style.background;
+							navBtn.style.background = '#ddd';
+							setTimeout(function(){
+								navBtn.style.background = origBg;
+							}, 150);
+						}
+					} catch(_e) {}
+
+					log('star toggled', { lang: lang, word: word, starred: isNowStarred });
+				} catch(err) {
+					warn('star click error', err);
+				}
+			});
+		})();
 	</script>
 
 	<!-- 原專案 CSS -->

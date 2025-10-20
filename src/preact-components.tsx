@@ -64,7 +64,18 @@ export function DictionaryPage(props: DictionaryPageProps) {
 				});
 
 				return (
-					<div key={idx} className="entry">
+					<div key={idx} className="entry" style={{ position: 'relative' }}>
+                        {/* 星號按鈕：只在第一個異音條目顯示 */}
+                        {idx === 0 && (
+                            <i
+                                className="star iconic-color icon-star-empty"
+                                title="加入字詞記錄簿"
+								style={{ color: '#400', top: '50px', right: '0px' }}
+                                data-word={title || text}
+                                data-lang={lang}
+                            ></i>
+                        )}
+
                         {/* 標題和 Ruby 標註：使用原專案流程（decorate-ruby -> rightAngle） */}
                         <h1 className="title" data-title={title || text}>
                             {(() => {
