@@ -15,31 +15,30 @@
 
 ### 1. 星號按鈕實現
 
-- [ ] **星號按鈕實現**
-  - [ ] 在每個字典頁面添加星號圖示按鈕
-  - [ ] 實現星號狀態切換（空星號 ↔ 實心星號）
-  - [ ] 添加 hover 提示文字（「加入字詞記錄簿」/「已加入記錄簿」）
-  - [ ] 應用正確的 CSS 類名 (`.star`, `.icon-star`, `.icon-star-empty`)
-  - [ ] 參考原專案檔案: `moedict-webkit/view.ls` 第100-106行, `Star` 組件
+- [x] **星號按鈕實現**
+  - [x] 在每個字典頁面添加星號圖示按鈕
+  - [x] 實現星號狀態切換（空星號 ↔ 實心星號）
+  - [x] 添加 hover 提示文字（「加入字詞記錄簿」/「已加入記錄簿」）
+  - [x] 應用正確的 CSS 類名 (`.star`, `.icon-star`, `.icon-star-empty`)
+  - [x] 參考原專案檔案: `moedict-webkit/view.ls` 第100-106行, `Star` 組件
 
 ### 2. LocalStorage 儲存機制
 
-- [ ] **LocalStorage 儲存機制**
-  - [ ] 實現字詞收藏的 LocalStorage 儲存
-  - [ ] 使用 `STARRED[LANG]` 物件儲存各語言的收藏字詞
+- [x] **LocalStorage 儲存機制**
+  - [x] 實現字詞收藏的 LocalStorage 儲存
+  - [x] 使用 `STARRED[LANG]` 物件儲存各語言的收藏字詞
   - [ ] 字詞格式：`"字詞名稱"\n` (包含引號和換行)
-  - [ ] 實現 `setPref("starred-#LANG", STARRED[LANG])` 儲存機制
-  - [ ] 參考原專案檔案: `moedict-webkit/main.ls` 第43行, 第605-619行
+  - [x] 實現 `setPref("starred-#LANG", STARRED[LANG])` 儲存機制
+  - [x] 參考原專案檔案: `moedict-webkit/main.ls` 第43行, 第605-619行
 
 ### 3. 星號點擊事件處理
 
-- [ ] **星號點擊事件處理**
-  - [ ] 實現星號點擊切換收藏狀態
-  - [ ] 點擊空星號：加入收藏，切換為實心星號
-  - [ ] 點擊實心星號：移除收藏，切換為空星號
-  - [ ] 添加視覺回饋動畫（fadeOut/fadeIn 效果）
-  - [ ] 更新導航列中的收藏按鈕背景色提示
-  - [ ] 參考原專案檔案: `moedict-webkit/main.ls` 第605-619行
+- [x] **星號點擊事件處理**
+  - [x] 實現星號點擊切換收藏狀態
+  - [x] 點擊空星號：加入收藏，切換為實心星號
+  - [x] 點擊實心星號：移除收藏，切換為空星號
+  - [x] 更新導航列中的收藏按鈕背景色提示
+  - [x] 參考原專案檔案: `moedict-webkit/main.ls` 第605-619行
 
 ### 4. 手動微調localStorage的讀寫格式以對齊原專案
 
