@@ -37,7 +37,7 @@ export default {
 				return await handleSubRouteAPI(modifiedUrl, env);
 			}
 
-			if (url.pathname.endsWith('.png')) {
+			if (url.pathname.match(/^\/[^\/]+\.png$/)) {
 				return await handleImageGeneration(url, env);
 			}
 
