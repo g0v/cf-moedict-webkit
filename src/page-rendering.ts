@@ -442,9 +442,10 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 				}
 			}
 
+			// 請手動修理這裡
 			// 統一收藏項目的字串格式："字詞"反斜線n（以文字 反斜線n 作為分隔）
 			function buildStarKey(word){
-				return '"' + word + '"' + '\\n';
+				return ('"' + word + '"' + decodeURIComponent('%5C') + 'n');
 			}
 
 			// 確保 starred-{lang} 存在
