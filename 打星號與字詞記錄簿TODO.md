@@ -27,7 +27,7 @@
 - [x] **LocalStorage 儲存機制**
   - [x] 實現字詞收藏的 LocalStorage 儲存
   - [x] 使用 `STARRED[LANG]` 物件儲存各語言的收藏字詞
-  - [ ] 字詞格式：`"字詞名稱"\n` (包含引號和換行)
+  - [x] 字詞格式：`"字詞名稱"\n` (包含引號和換行)
   - [x] 實現 `setPref("starred-#LANG", STARRED[LANG])` 儲存機制
   - [x] 參考原專案檔案: `moedict-webkit/main.ls` 第43行, 第605-619行
 
