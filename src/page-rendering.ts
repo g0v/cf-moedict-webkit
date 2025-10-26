@@ -370,21 +370,73 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 				});
 			});
 
-			// 監聽所有內部連結點擊
-			document.addEventListener('click', function(e) {
-				var link = e.target.closest('a');
-				if (link && link.href) {
+		// 監聽所有內部連結點擊
+		document.addEventListener('click', function(e) {
+			var link = e.target.closest('a');
+			if (link && link.href) {
+				try {
 					var url = new URL(link.href);
-					if (url.pathname !== window.location.pathname) {
-						// 提取字詞名稱
-						var word = url.pathname.replace(/^\\//, '');
-						if (word && word !== '=*' && word !== 'about.html') {
-							// 儲存到瀏覽歷史
-							addToLRU(word, 'a'); // 預設華語
-						}
+					var word = '';
+
+					// 過濾條件：只記錄內部字詞查詢
+					// 1. 必須是同源連結
+					if (url.origin !== window.location.origin) {
+						return;
 					}
+
+					// 2. 判斷是 pathname 變化還是 hash 變化
+					var isHashChange = (url.pathname === window.location.pathname) && url.hash;
+
+					if (isHashChange) {
+						// Hash 路由：提取 hash 中的字詞（移除 # 符號）
+						word = url.hash.substring(1); // 移除開頭的 #
+						word = decodeURIComponent(word); // URL 解碼
+					} else if (url.pathname !== window.location.pathname) {
+						// Pathname 路由：提取 pathname 中的字詞
+						word = url.pathname.replace(/^\\//, '');
+					} else {
+						// 既沒有 pathname 變化，也沒有 hash，不記錄
+						return;
+					}
+
+					// 3. 過濾掉空白
+					if (!word || word === '') {
+						return;
+					}
+
+					// 4. 過濾掉 about 頁面
+					if (word === 'about.html' || word.startsWith('about')) {
+						return;
+					}
+
+					// 5. 過濾掉字詞紀錄簿和其他特殊路由（以 = 或 @ 開頭）
+					if (word === '=*' || word.startsWith('=') || word.startsWith('@')) {
+						return;
+					}
+
+					// 6. 過濾掉包含斜線的路徑（通常是多層路徑，不是字詞）
+					if (word.includes('/')) {
+						return;
+					}
+
+					// 7. 過濾掉副檔名（.html, .json, .png 等）
+					if (/\.(html|json|png|jpg|jpeg|gif|svg|css|js)$/i.test(word)) {
+						return;
+					}
+
+					// 8. 移除語言前綴符號（'、!、:、~）後檢查
+					var cleanWord = word.replace(/^['!:~]/, '');
+					if (!cleanWord || cleanWord === '') {
+						return;
+					}
+
+					// 通過所有過濾條件，記錄到瀏覽歷史
+					addToLRU(cleanWord, 'a'); // 預設華語
+				} catch (_err) {
+					// 解析 URL 失敗，忽略
 				}
-			});
+			}
+		});
 		})();
 
 		// 星號（收藏）功能與 LocalStorage 儲存機制，含詳細 debug log
