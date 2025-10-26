@@ -91,8 +91,8 @@ export function DictionaryPage(props: DictionaryPageProps) {
 
                 return (
 					<div key={idx} className="entry" style={{ position: 'relative' }}>
-                        {/* 部首與筆畫區（僅在第一個異音前顯示） */}
-                        {idx === 0 && (entry.radical || entry.stroke_count || entry.non_radical_stroke_count) && (
+                        {/* 部首與筆畫區 */}
+                        {(entry.radical || entry.stroke_count || entry.non_radical_stroke_count) && (
                             <div className="radical">
                                 {entry.radical && <RadicalGlyph char={entry.radical} />}
                                 <span className="sym">+</span>
