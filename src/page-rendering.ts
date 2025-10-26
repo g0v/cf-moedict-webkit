@@ -709,6 +709,32 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 			padding-right: 34px;
 		}
 
+		/* 部首與筆畫樣式（複刻原專案視覺） */
+		.radical {
+			display: inline-block;
+			margin: 8px 0 6px 0;
+			margin-right: 12px;
+			vertical-align: middle;
+		}
+		.radical .glyph {
+			display: inline-block;
+			background-color: #6B0000; /* 深紅底 */
+			color: #ffffff;            /* 白字 */
+			border-radius: 4px;
+		}
+		.radical .glyph a { color: #ffffff; text-decoration: none; }
+		.radical .glyph a:hover { text-decoration: none; background-color: #5a0000; border-radius: 4px; }
+		.radical .count {
+			display: inline-block;
+			margin-left: 8px;
+			color: #000;               /* 黑字 */
+			background: transparent;   /* 無底色 */
+			font-weight: 500;
+		}
+		.radical .sym {
+			margin: 0 4px;
+		}
+
 		/* 播放按鈕樣式（複刻原專案 _result.scss 和 _font-awesome.scss） */
 		.part-of-speech.playAudio {
 			/* 原專案：紅色圖示、白色底、無邊框 */
@@ -1030,13 +1056,7 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 		  document.addEventListener('mouseover', function(ev){
 		    console.log('[Tooltip] mouseover');
 		    var a = ev.target && ev.target.closest ? ev.target.closest('.result a[href]:not(.xref)') : null;
-		    if (!a && ev.target && ev.target.closest) {
-		      var anyA = ev.target.closest('a[href]');
-		      if (anyA && anyA.closest && anyA.closest('.result')) {
-		        a = anyA;
-		        try { console.log('[Tooltip] fallback anchor found', a.getAttribute('href')); } catch(_l) {}
-		      }
-		    }
+
 		    if (!a) { try { console.log('[Tooltip] no anchor, skip'); } catch(_l) {} return; }
 		    try { console.log('[Tooltip] mouseover anchor', a.getAttribute('href')); } catch(_l) {}
 		    if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
