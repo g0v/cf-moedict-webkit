@@ -241,6 +241,61 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 
 	<!-- 處理 # 路由和首頁重定向的前端腳本 -->
 	<script>
+		// 全域 LRU 記錄函數（優先定義，供所有腳本使用）
+		var addToLRU = (function() {
+			// 儲存瀏覽歷史到 localStorage
+			return function(word, lang) {
+				if (!word || word === '=*') return;
+
+				var lruKey = 'lru-' + lang;
+				var lruData = localStorage.getItem(lruKey);
+				var words = [];
+
+				try {
+					if (lruData) {
+						words = JSON.parse(lruData);
+					}
+				} catch (e) {
+					console.log('解析瀏覽歷史失敗:', e);
+					words = [];
+				}
+
+				// 移除重複項目
+				words = words.filter(function(w) { return w !== word; });
+
+				// 將新字詞加到開頭
+				words.unshift(word);
+
+				// 限制歷史記錄數量（最多 50 個）
+				if (words.length > 50) {
+					words = words.slice(0, 50);
+				}
+
+				// 儲存回 localStorage
+				localStorage.setItem(lruKey, JSON.stringify(words));
+			};
+		})();
+
+		// 過濾和清理字詞的輔助函數
+		function shouldRecordWord(word) {
+			// 過濾掉空白
+			if (!word || word === '') return false;
+
+			// 過濾掉 about 頁面
+			if (word === 'about.html' || word.startsWith('about')) return false;
+
+			// 過濾掉字詞紀錄簿和其他特殊路由（以 = 或 @ 開頭）
+			if (word === '=*' || word.startsWith('=') || word.startsWith('@')) return false;
+
+			// 過濾掉包含斜線的路徑（通常是多層路徑，不是字詞）
+			if (word.includes('/')) return false;
+
+			// 過濾掉副檔名（.html, .json, .png 等）
+			if (/\.(html|json|png|jpg|jpeg|gif|svg|css|js)$/i.test(word)) return false;
+
+			return true;
+		}
+
 		// 統一處理 hash 路由和首頁重定向
 		(function() {
 			// 導向收藏頁的 hash 處理：攔截 #=* 並改為 /=*
@@ -264,6 +319,35 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 				if (window.location.hash && window.location.hash !== '#') {
 					var hash = window.location.hash.substring(1); // 移除 # 符號
 					if (hash) {
+						try {
+							// URL 解碼
+							var decodedHash = decodeURIComponent(hash);
+
+							// 判斷語言: 開頭是 "'" → 台語 (t)
+							//          開頭是 ':' → 客語 (h)
+							//          開頭是 '~' → 兩岸 (c)
+							//          無前綴      → 華語 (a)
+							var lang, cleanWord;
+							if (decodedHash.startsWith("'")) {
+								lang = 't';
+								cleanWord = decodedHash.slice(1);
+							} else if (decodedHash.startsWith(':')) {
+								lang = 'h';
+								cleanWord = decodedHash.slice(1);
+							} else if (decodedHash.startsWith('~')) {
+								lang = 'c';
+								cleanWord = decodedHash.slice(1);
+							} else {
+								lang = 'a';
+								cleanWord = decodedHash;
+							}
+
+							// 在重定向之前先記錄到 localStorage，避免重定向後無法記錄
+							if (shouldRecordWord(cleanWord)) {
+								addToLRU(cleanWord, lang);
+							}
+						} catch (_err) {}
+
 						// 更新 URL，移除 hash
 						var newUrl = window.location.pathname.replace(/\\/$/, '') + '/' + hash;
 						// 重新載入頁面以取得正確內容
@@ -300,37 +384,6 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 
 		// 字詞紀錄簿功能
 		(function() {
-			// 儲存瀏覽歷史到 localStorage
-			function addToLRU(word, lang) {
-				if (!word || word === '=*') return;
-
-				var lruKey = 'lru-' + lang;
-				var lruData = localStorage.getItem(lruKey);
-				var words = [];
-
-				try {
-					if (lruData) {
-						words = JSON.parse(lruData);
-					}
-				} catch (e) {
-					console.log('解析瀏覽歷史失敗:', e);
-					words = [];
-				}
-
-				// 移除重複項目
-				words = words.filter(function(w) { return w !== word; });
-
-				// 將新字詞加到開頭
-				words.unshift(word);
-
-				// 限制歷史記錄數量（最多 50 個）
-				if (words.length > 50) {
-					words = words.slice(0, 50);
-				}
-
-				// 儲存回 localStorage
-				localStorage.setItem(lruKey, JSON.stringify(words));
-			}
 
 			// 載入字詞紀錄簿內容
 			function loadStarredPage() {
@@ -378,13 +431,12 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 					var url = new URL(link.href);
 					var word = '';
 
-					// 過濾條件：只記錄內部字詞查詢
-					// 1. 必須是同源連結
+					// 必須是同源連結
 					if (url.origin !== window.location.origin) {
 						return;
 					}
 
-					// 2. 判斷是 pathname 變化還是 hash 變化
+					// 判斷是 pathname 變化還是 hash 變化
 					var isHashChange = (url.pathname === window.location.pathname) && url.hash;
 
 					if (isHashChange) {
@@ -399,39 +451,13 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 						return;
 					}
 
-					// 3. 過濾掉空白
-					if (!word || word === '') {
-						return;
-					}
-
-					// 4. 過濾掉 about 頁面
-					if (word === 'about.html' || word.startsWith('about')) {
-						return;
-					}
-
-					// 5. 過濾掉字詞紀錄簿和其他特殊路由（以 = 或 @ 開頭）
-					if (word === '=*' || word.startsWith('=') || word.startsWith('@')) {
-						return;
-					}
-
-					// 6. 過濾掉包含斜線的路徑（通常是多層路徑，不是字詞）
-					if (word.includes('/')) {
-						return;
-					}
-
-					// 7. 過濾掉副檔名（.html, .json, .png 等）
-					if (/\.(html|json|png|jpg|jpeg|gif|svg|css|js)$/i.test(word)) {
-						return;
-					}
-
-					// 8. 移除語言前綴符號（'、!、:、~）後檢查
+					// 移除語言前綴符號（'、!、:、~）
 					var cleanWord = word.replace(/^['!:~]/, '');
-					if (!cleanWord || cleanWord === '') {
-						return;
-					}
 
-					// 通過所有過濾條件，記錄到瀏覽歷史
-					addToLRU(cleanWord, 'a'); // 預設華語
+					// 使用統一的過濾函數檢查是否應該記錄
+					if (shouldRecordWord(cleanWord)) {
+						addToLRU(cleanWord, 'a'); // 預設華語
+					}
 				} catch (_err) {
 					// 解析 URL 失敗，忽略
 				}
