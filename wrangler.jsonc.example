@@ -24,7 +24,8 @@
 		}
 	],
 	"vars": {
-		"ASSET_BASE_URL": "https://<your-pub-id>.r2.dev"
+		"ASSET_BASE_URL": "https://<your-pub-id>.r2.dev",
+		"DICTIONARY_BASE_URL": "https://<your-pub-id>.r2.dev"
 	}
 }
 
