@@ -3,6 +3,7 @@ import { parseTextFromUrl, fixMojibake, getCORSHeaders } from './index';
 import { lookupDictionaryEntry, getDefinition } from './dictionary';
 import { renderToString } from 'preact-render-to-string';
 import { DictionaryPage, SearchResultsPage, NotFoundPage } from './preact-components';
+import { handleRadicalPageRequest } from './radical-pages.tsx';
 import { NavbarComponent } from './navbar-component';
 import { AboutPage } from './about-page';
 import { StarredPageSSR } from './starred-page';
@@ -21,6 +22,10 @@ export async function handlePageRequest(url: URL, env: Env): Promise<Response> {
 
 	// 提供簡介框（tooltip）資料端點
 	try {
+		// 部首檢索頁面：/@ 與 /@{部首}
+		if (fixedText === '@' || fixedText.startsWith('@')) {
+			return await handleRadicalPageRequest(url, env);
+		}
 		const tooltip = url.searchParams.get('tooltip');
 		if (tooltip === '1') {
 			const idParam = url.searchParams.get('id') || '';
@@ -705,10 +710,6 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 			z-index: 1030;
 		}
 
-		/* 確保導航列不透明 */
-		.navbar-inverse {
-			opacity: 1 !important;
-		}
 
 		/* 為內容區域添加適當的 padding */
 		.result {

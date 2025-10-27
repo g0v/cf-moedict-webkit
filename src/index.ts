@@ -46,6 +46,11 @@ export default {
 				return await handleAboutPageRequest(url, env);
 			}
 
+			// 部首檢索頁面（/@ 以及 /@{部首}）
+			if (url.pathname === '/@' || url.pathname.startsWith('/@')) {
+				return await handlePageRequest(url, env);
+			}
+
 			if (url.pathname.endsWith('.html') || url.pathname === '/') {
 				return await handlePageRequest(url, env);
 			}

@@ -58,7 +58,7 @@ export function NavbarComponent(props: NavbarProps) {
 			<div className="nav-bg navbar-fixed-top"></div>
 
 			{/* 主要導航列 */}
-			<nav role="navigation" className="navbar navbar-inverse navbar-fixed-top">
+			<nav role="navigation" className="navbar navbar-inverse navbar-fixed-top" style={{ opacity: 1 }}>
 				{/* 左側區域 */}
 				<div className="navbar-header">
 					<a href="./" className="navbar-brand brand ebas">萌典</a>

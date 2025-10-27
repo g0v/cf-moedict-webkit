@@ -13,6 +13,7 @@ export interface Env {
   // 環境變數
   FONT_BASE_URL?: string;
   ASSET_BASE_URL?: string;
+  DICTIONARY_BASE_URL?: string;
 }
 
 // 字典語言類型
