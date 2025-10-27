@@ -58,6 +58,7 @@ function RadicalTable(props: { data: string[][] }) {
 									<a key={i} className="stroke-char" href={`/@${radical}`} style={{ marginRight: '6px' }}>{radical}</a>
 								))}
 							</span>
+							<hr style={{ margin: '0', padding: '0', height: '0' }} />
 						</div>
 					)
 					})}
@@ -67,24 +68,25 @@ function RadicalTable(props: { data: string[][] }) {
 	);
 }
 
-function RadicalBucket(props: { radical: string, data: string[][] }) {
-	const { radical, data } = props;
+function RadicalBucket(props: { radical: string, data: string[][], backHref: string }) {
+	const { radical, data, backHref } = props;
 	return (
 		<div className="result" style={{ marginTop: '50px' }}>
 			<h1 className="title" style={{ marginTop: '0' }}>{radical} 部</h1>
-			<p><a className="xref" href="/@">回部首表</a></p>
+			<p><a className="xref" href={backHref}>回部首表</a></p>
 			<div className="entry">
 				<div className="entry-item list">
 					{(Array.isArray(data) ? data : []).map((row, idx) => {
 						const list = Array.isArray(row) ? row.filter(Boolean) : [];
 						return (
 						<div key={idx} style={{ margin: '8px 0' }}>
-							<span className="stroke-count" style={{ marginRight: '8px' }}>+{idx}</span>
+							<span className="stroke-count" style={{ marginRight: '8px' }}>{idx}</span>
 							<span className="stroke-list">
 								{list.map((ch, i) => (
 									<a key={i} className="stroke-char" href={`/${ch}`} style={{ marginRight: '6px' }}>{ch}</a>
 								))}
 							</span>
+							<hr style={{ margin: '0', padding: '0', height: '0' }} />
 						</div>
 					)
 					})}
@@ -99,6 +101,8 @@ export async function handleRadicalPageRequest(url: URL, env: Env): Promise<Resp
 		const assetBase = env.ASSET_BASE_URL?.replace(/\/$/, '') || '';
 		const dictBase = requireDictionaryBaseUrl(env);
 		const path = url.pathname.replace(/^\//, '');
+		const isCn = url.pathname.startsWith('/~@');
+		const langKey = isCn ? 'c' : 'a';
 		// 資料正規化：允許 object 或一維陣列
 		const normalizeRows = (raw: any): string[][] => {
 			try {
@@ -122,33 +126,32 @@ export async function handleRadicalPageRequest(url: URL, env: Env): Promise<Resp
 				return [];
 			} catch(_e) { return []; }
 		};
-		// /@ 或 @
-		if (path === '@' || path === '/@') {
-			const api = `${dictBase}/a/%40.json`;
+		// /@ 或 /~@
+		if (path === '@' || path === '~@') {
+			const api = `${dictBase}/${langKey}/%40.json`;
 			const raw = await fetchJson(api);
 			const data = normalizeRows(raw); // [[radicals], ...] by strokes
 			const body = renderToString(
 				<>
-					<NavbarComponent currentLang="a" onLangChange={() => {}} />
+					<NavbarComponent currentLang={langKey as any} onLangChange={() => {}} />
 					<RadicalTable data={Array.isArray(data) ? data : []} />
 				</>
 			);
 			return new Response(wrapHtml('部首表', body, assetBase), { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
 		}
 		// /@{radical}
-		const m = path.match(/^@(.+)$/);
+		const m = (isCn ? path.match(/^~@(.+)$/) : path.match(/^@(.+)$/));
 		const radical = m ? decodeURIComponent(m[1]) : '';
 		if (!radical) {
 			return new Response('Not Found', { status: 404 });
 		}
-		const api = `${dictBase}/a/%40${encodeURIComponent(radical)}.json`;
+		const api = `${dictBase}/${langKey}/%40${encodeURIComponent(radical)}.json`;
 		const raw = await fetchJson(api);
 		const data = normalizeRows(raw); // [[chars], ...] by remaining strokes
 		const body = renderToString(
 			<>
-				<NavbarComponent currentLang="a" onLangChange={() => {}} />
-				<NavbarComponent currentLang="a" onLangChange={() => {}} />
-				<RadicalBucket radical={radical} data={Array.isArray(data) ? data : []} />
+				<NavbarComponent currentLang={langKey as any} onLangChange={() => {}} />
+				<RadicalBucket radical={radical} data={Array.isArray(data) ? data : []} backHref={isCn ? '/~@' : '/@'} />
 			</>
 		);
 		return new Response(wrapHtml(`${radical} 部`, body, assetBase), { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
