@@ -705,6 +705,11 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 			z-index: 1030;
 		}
 
+		/* 確保導航列不透明 */
+		.navbar-inverse {
+			opacity: 1 !important;
+		}
+
 		/* 為內容區域添加適當的 padding */
 		.result {
 			padding: 20px;
