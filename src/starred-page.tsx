@@ -112,18 +112,6 @@ export function StarredPageSSR() {
 							className="btn-default btn btn-tiny"
 							value="清除"
 							style={{ marginLeft: '10px' }}
-							onClick={() => {
-								if (confirm('確定要清除瀏覽紀錄？')) {
-									// 前端 JavaScript 處理
-									if (typeof window !== 'undefined' && window.localStorage) {
-										window.localStorage.removeItem('lru-a');
-										window.localStorage.removeItem('lru-t');
-										window.localStorage.removeItem('lru-h');
-										window.localStorage.removeItem('lru-c');
-										location.reload();
-									}
-								}
-							}}
 						/>
 					</h3>
 					<div className="word-list">
@@ -132,7 +120,7 @@ export function StarredPageSSR() {
 					</div>
 				</div>
 			</div>
-            {/* 以 localStorage 解析 starred-{lang} 字串並渲染清單 */}
+            {/* 以 localStorage 解析 starred-{lang} 字串並渲染清單，並綁定清除鈕事件 */}
             <script
                 dangerouslySetInnerHTML={{ __html: `
                 (function(){
@@ -180,12 +168,30 @@ export function StarredPageSSR() {
                     }
                     container.innerHTML = html;
                   }
+                  function bindClear(){
+                    try {
+                      var btn = document.getElementById('btn-clear-lru');
+                      if (!btn) return;
+                      if (btn._bound) return; // 防止重複綁定
+                      btn._bound = true;
+                      btn.addEventListener('click', function(){
+                        var lang = getLang();
+                        if (window.confirm('確定要清除瀏覽紀錄？')) {
+                          try {
+                            window.localStorage && window.localStorage.removeItem('lru-' + lang);
+                            location.reload();
+                          } catch(_e) {}
+                        }
+                      });
+                    } catch(_e) {}
+                  }
                   function run(){
                     try {
                       var lang = getLang();
                       var raw = localStorage.getItem('starred-' + lang) || '';
                       var list = parseStarred(raw);
                       render(list);
+                      bindClear();
                     } catch(_e){}
                   }
                   if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', run, { once: true }); } else { run(); }
