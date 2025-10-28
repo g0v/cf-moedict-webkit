@@ -50,7 +50,7 @@ const LANG_SPECIAL_PAGES = {
 export function NavbarComponent(props: NavbarProps) {
 	const { currentLang, onLangChange } = props;
 	const currentLangOption = LANG_OPTIONS.find(opt => opt.key === currentLang);
-	const specialPages = LANG_SPECIAL_PAGES[currentLang] || [];
+	const escAttr = (s: string) => (s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
 
 	return (
 		<>
@@ -77,37 +77,42 @@ export function NavbarComponent(props: NavbarProps) {
 								{currentLangOption?.label || '華語辭典'}
 							</span>
 							<b className="caret"></b>
-						</a>
-						<ul role="navigation" className="dropdown-menu">
-							{/* 語言選項 */}
-							{LANG_OPTIONS.map(option => (
-								<li key={option.key} role="presentation">
-									<a
-										role="menuitem"
-										href={option.href}
-										className={`lang-option ${option.key}`}
-										onClick={(e) => {
-											e.preventDefault();
-											onLangChange(option.key);
-										}}
-									>
-										{option.label}
-									</a>
-								</li>
-							))}
-
-							{/* 特殊頁面 */}
-							{specialPages.map((page, index) => (
-								<li key={index} role="presentation">
-									<a
-										href={page.href}
-										className={`lang-option ${currentLang} ${page.href.includes('諺語') ? 'idiom' : ''}`}
-									>
-										{page.label}
-									</a>
-								</li>
-							))}
-						</ul>
+					</a>
+					<ul role="navigation" className="dropdown-menu">
+						{/* 每種語言及其特殊頁面 */}
+						{LANG_OPTIONS.map(option => {
+							const specialPages = LANG_SPECIAL_PAGES[option.key] || [];
+							return (
+								<>
+									{/* 語言選項 */}
+									<li key={option.key} role="presentation">
+										<a
+											role="menuitem"
+											href={option.href}
+											className={`lang-option ${option.key}`}
+											onClick={(e) => {
+												e.preventDefault();
+												onLangChange(option.key);
+											}}
+										>
+											{option.label}
+										</a>
+									</li>
+									{/* 該語言的特殊頁面 */}
+									{specialPages.map((page, index) => (
+										<li key={`${option.key}-${index}`} role="presentation">
+											<a
+												href={page.href}
+												className={`lang-option ${option.key} ${page.href.includes('諺語') ? 'idiom' : ''}`}
+											>
+												{page.label}
+											</a>
+										</li>
+									))}
+								</>
+							);
+						})}
+					</ul>
 					</li>
 
 					{/* 字詞紀錄簿按鈕 */}
@@ -160,13 +165,12 @@ export function NavbarComponent(props: NavbarProps) {
 
 					{/* Google 站內搜尋 */}
 					<li style={{ display: 'inline-block' }} className="web-inline-only">
-						<div id="gcse">
-							<span className={`lang-${currentLang}-only`}>
-								<gcse:search
-									webSearchQueryAddition={getSearchQueryAddition(currentLang)}
-								></gcse:search>
-							</span>
-						</div>
+					<div id="gcse">
+						<span
+							className={`lang-${currentLang}-only`}
+							dangerouslySetInnerHTML={{ __html: `<gcse:search webSearchQueryAddition="${escAttr(getSearchQueryAddition(currentLang))}"></gcse:search>` }}
+						/>
+					</div>
 					</li>
 
 
@@ -217,6 +221,27 @@ export function NavbarComponent(props: NavbarProps) {
 					</li>
 				</ul>
 			</nav>
+
+			{/* 動態載入 Bootstrap Dropdown 並初始化；同時處理 #@/#~@ 導向 */}
+			<script
+				dangerouslySetInnerHTML={{ __html: `
+				(function(){
+				  function load(src, cb){ var s=document.createElement('script'); s.src=src; s.onload=cb||function(){}; s.onerror=function(){}; document.head.appendChild(s); }
+				  function ensureJq(cb){ if (window.jQuery) return cb(); load('/js/jquery-2.1.1.min.js', cb); }
+				  function ensureDropdown(cb){ try { if (window.jQuery && window.jQuery.fn && window.jQuery.fn.dropdown) return cb(); } catch(_){} load('/js/bootstrap/dropdown.js', cb); }
+				  function init(){ try { window.jQuery(function(){ try { window.jQuery('.dropdown-toggle').dropdown(); } catch(_e){} }); } catch(_e){} }
+				  ensureJq(function(){ ensureDropdown(init); });
+				  // 部首表快捷：#@ -> /@；#~@ -> /~@
+				  document.addEventListener('click', function(e){
+				    var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+				    if (!a) return;
+				    var href = a.getAttribute('href') || '';
+				    if (href === '#@') { e.preventDefault(); window.location.href = '/@'; return; }
+				    if (href === '#~@') { e.preventDefault(); window.location.href = '/~@'; return; }
+				  });
+				})();
+				` }}
+			></script>
 
 		</>
 	);

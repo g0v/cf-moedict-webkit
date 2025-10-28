@@ -286,6 +286,8 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 			// 過濾掉空白
 			if (!word || word === '') return false;
 
+			if (word === '#') return false;
+
 			// 過濾掉 about 頁面
 			if (word === 'about.html' || word.startsWith('about')) return false;
 
@@ -313,7 +315,10 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 					try {
 						var href = a.getAttribute('href');
 						var u = new URL(href, window.location.href);
-						if (u.hash === '#=*') { e.preventDefault(); goStarred(); }
+							if (u.hash === '#=*') { e.preventDefault(); goStarred(); return; }
+							// 部首表快捷：#@ -> /@，#~@ -> /~@
+							if (u.hash === '#@') { e.preventDefault(); window.location.href = '/@'; return; }
+							if (u.hash === '#~@') { e.preventDefault(); window.location.href = '/~@'; return; }
 					} catch(_url){}
 				});
 				window.addEventListener('hashchange', handleHashStar);
@@ -991,6 +996,7 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 			}
 		}
 	</style>
+
 		<script>
 		// 提前在 <head> 內定義全域播放函式，確保 inline onclick 可用
 		(function(){

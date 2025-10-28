@@ -8,6 +8,7 @@ declare global {
 			yin: any;
 			diao: any;
 			rt: any;
+			'gcse:search': any;
 		}
 	}
 }

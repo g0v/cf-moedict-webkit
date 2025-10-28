@@ -39,7 +39,8 @@
 		/* Skip type checking all .d.ts files. */
 		"skipLibCheck": true,
 		"types": [
-			"./worker-configuration.d.ts"
+			"./worker-configuration.d.ts",
+			"./src/jsx-custom.d.ts"
 		]
 	},
 	"exclude": ["test"],
