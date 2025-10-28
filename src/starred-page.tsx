@@ -116,11 +116,10 @@ export function StarredPageSSR() {
 					</h3>
 					<div className="word-list">
 						{/* 這裡會由前端 JavaScript 動態載入 */}
-						<p>載入中...</p>
 					</div>
 				</div>
 			</div>
-            {/* 以 localStorage 解析 starred-{lang} 字串並渲染清單，並綁定清除鈕事件 */}
+			{/* 以 localStorage 解析 starred-{lang} 與 lru-{lang} 並渲染清單，並綁定清除鈕事件 */}
             <script
                 dangerouslySetInnerHTML={{ __html: `
                 (function(){
@@ -140,6 +139,27 @@ export function StarredPageSSR() {
                     }
                     return list;
                   }
+				  function parseLru(raw){
+					var list = [];
+					if (!raw) return list;
+					try {
+					  var parsed = JSON.parse(raw);
+					  if (Array.isArray(parsed)) {
+						for (var i=0;i<parsed.length;i++) {
+						  var v = parsed[i];
+						  if (typeof v === 'string' && v) list.push(v);
+						}
+						return list;
+					  }
+					} catch(_e) {}
+					// 後備解析：抓取所有引號中的字串
+					var re = /"([^\"]+)"/g, m; var seen = Object.create(null);
+					while ((m = re.exec(raw))) {
+					  var w = m[1];
+					  if (!seen[w]) { list.push(w); seen[w] = 1; }
+					}
+					return list;
+				  }
                   function ensureContainer(){
                     var sec = document.querySelector('.starred-section');
                     if (!sec) return null;
@@ -168,6 +188,27 @@ export function StarredPageSSR() {
                     }
                     container.innerHTML = html;
                   }
+				  function renderRecent(list){
+					var sec = document.querySelector('.recent-section');
+					if (!sec) return;
+					var container = sec.querySelector('.word-list');
+					if (!container){
+					  container = document.createElement('div');
+					  container.className = 'word-list';
+					  sec.appendChild(container);
+					}
+					if (!list.length){
+					  container.innerHTML = '';
+					  return;
+					}
+					var html = '';
+					for (var i=0;i<list.length;i++){
+					  var w = list[i];
+					  var href = '/' + encodeURIComponent(w);
+					  html += '<div style="clear: both; display: block;"><span>·</span><a href="'+href+'">'+w+'</a></div>';
+					}
+					container.innerHTML = html;
+				  }
                   function bindClear(){
                     try {
                       var btn = document.getElementById('btn-clear-lru');
@@ -185,12 +226,23 @@ export function StarredPageSSR() {
                       });
                     } catch(_e) {}
                   }
+				  function setClearVisibility(hasItems){
+					try {
+					  var btn = document.getElementById('btn-clear-lru');
+					  if (!btn) return;
+					  btn.style.display = hasItems ? '' : 'none';
+					} catch(_e) {}
+				  }
                   function run(){
                     try {
                       var lang = getLang();
-                      var raw = localStorage.getItem('starred-' + lang) || '';
-                      var list = parseStarred(raw);
-                      render(list);
+					  var rawStarred = localStorage.getItem('starred-' + lang) || '';
+					  var starredList = parseStarred(rawStarred);
+					  render(starredList);
+					  var rawLru = localStorage.getItem('lru-' + lang) || '';
+					  var lruList = parseLru(rawLru);
+					  renderRecent(lruList);
+					  setClearVisibility(lruList && lruList.length > 0);
                       bindClear();
                     } catch(_e){}
                   }
