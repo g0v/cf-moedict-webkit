@@ -52,20 +52,20 @@
 
 ### 5. 字詞記錄簿頁面
 
-- [ ] **字詞記錄簿頁面**
-  - [ ] 實現 `=*` 路由處理，顯示收藏的字詞列表
-  - [ ] 從 LocalStorage 讀取 `STARRED[LANG]` 資料
-  - [ ] 解析字詞列表並生成連結列表
-  - [ ] 實現收藏字詞的點擊導航功能
-  - [ ] 參考原專案檔案: `moedict-webkit/main.ls` 第547行, `load-json` 函數
+- [x] **字詞記錄簿頁面**
+  - [x] 實現 `=*` 路由處理，顯示收藏的字詞列表
+  - [x] 從 LocalStorage 讀取 `STARRED[LANG]` 資料
+  - [x] 解析字詞列表並生成連結列表
+  - [x] 實現收藏字詞的點擊導航功能
+  - [x] 參考原專案檔案: `moedict-webkit/main.ls` 第547行, `load-json` 函數
 
-### 5. 多語言支援
+### 6. 多語言支援
 
-- [ ] **多語言支援**
-  - [ ] 為不同語言（華語、台語、客語、兩岸）分別儲存收藏
-  - [ ] 使用 `starred-a`, `starred-t`, `starred-h`, `starred-c` 作為 LocalStorage 鍵名
-  - [ ] 確保各語言收藏獨立管理
-  - [ ] 參考原專案檔案: `moedict-webkit/main.ls` 第43行, `HASH-OF` 對應關係
+- [x] **多語言支援**
+  - [x] 為不同語言（華語、台語、客語、兩岸）分別儲存收藏
+  - [x] 使用 `starred-a`, `starred-t`, `starred-h`, `starred-c` 作為 LocalStorage 鍵名
+  - [x] 確保各語言收藏獨立管理
+  - [x] 參考原專案檔案: `moedict-webkit/main.ls` 第43行, `HASH-OF` 對應關係
 
 ## 🔍 原專案程式碼研究
 
