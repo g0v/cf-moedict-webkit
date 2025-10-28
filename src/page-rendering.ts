@@ -247,10 +247,18 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 	<!-- 處理 # 路由和首頁重定向的前端腳本 -->
 	<script>
 		// 全域 LRU 記錄函數（優先定義，供所有腳本使用）
-		var addToLRU = (function() {
+			var addToLRU = (function() {
 			// 儲存瀏覽歷史到 localStorage
-			return function(word, lang) {
-				if (!word || word === '=*') return;
+				return function(word, lang) {
+					if (!word || word === '=*') return;
+
+					// 先嘗試 URI 解碼，避免寫入 %E6%… 形式
+					try {
+						var decoded = decodeURIComponent(word);
+						if (decoded) { word = decoded; }
+					} catch(_decErr) {}
+					try { word = String(word).trim(); } catch(_s) {}
+					if (!word) return;
 
 				var lruKey = 'lru-' + lang;
 				var lruData = localStorage.getItem(lruKey);
@@ -265,8 +273,11 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 					words = [];
 				}
 
-				// 移除重複項目
-				words = words.filter(function(w) { return w !== word; });
+					// 移除重複項目（同時比對解碼前後）
+					words = words.filter(function(w) {
+						if (w === word) return false;
+						try { return decodeURIComponent(w) !== word; } catch(_e) { return true; }
+					});
 
 				// 將新字詞加到開頭
 				words.unshift(word);
