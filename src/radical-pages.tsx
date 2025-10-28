@@ -41,8 +41,9 @@ ${body}
 </html>`;
 }
 
-function RadicalTable(props: { data: string[][] }) {
-	const { data } = props;
+function RadicalTable(props: { data: string[][], isCrossStrait: boolean }) {
+	const { data, isCrossStrait } = props;
+	const prefix = isCrossStrait ? '/~@' : '/@';
 	return (
 		<div className="result" style={{ marginTop: '50px' }}>
 			<h1 className="title" style={{ marginTop: '0' }}>部首表</h1>
@@ -55,7 +56,7 @@ function RadicalTable(props: { data: string[][] }) {
 							<span className="stroke-count" style={{ marginRight: '8px' }}>{idx}</span>
 							<span className="stroke-list">
 								{list.map((radical, i) => (
-									<a key={i} className="stroke-char" href={`/@${radical}`} style={{ marginRight: '6px' }}>{radical}</a>
+									<a key={i} className="stroke-char" href={`${prefix}${radical}`} style={{ marginRight: '6px' }}>{radical}</a>
 								))}
 							</span>
 							<hr style={{ margin: '0', padding: '0', height: '0' }} />
@@ -83,7 +84,14 @@ function RadicalBucket(props: { radical: string, data: string[][], backHref: str
 							<span className="stroke-count" style={{ marginRight: '8px' }}>{idx}</span>
 							<span className="stroke-list">
 								{list.map((ch, i) => (
-									<a key={i} className="stroke-char" href={`/${ch}`} style={{ marginRight: '6px' }}>{ch}</a>
+									<a
+										key={i}
+										className="stroke-char"
+										href={backHref.startsWith('/~@') ? `/~${ch}` : `/${ch}`}
+										style={{ marginRight: '6px' }}
+									>
+										{ch}
+									</a>
 								))}
 							</span>
 							<hr style={{ margin: '0', padding: '0', height: '0' }} />
@@ -134,7 +142,7 @@ export async function handleRadicalPageRequest(url: URL, env: Env): Promise<Resp
 			const body = renderToString(
 				<>
 					<NavbarComponent currentLang={langKey as any} onLangChange={() => {}} />
-					<RadicalTable data={Array.isArray(data) ? data : []} />
+					<RadicalTable data={Array.isArray(data) ? data : []} isCrossStrait={isCn} />
 				</>
 			);
 			return new Response(wrapHtml('部首表', body, assetBase), { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
