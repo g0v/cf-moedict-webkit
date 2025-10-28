@@ -1135,10 +1135,11 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 		    el.style.top = ny + 'px';
 		    try { console.log('[Tooltip] positioned at', nx, ny, 'size', w, h); } catch(_l) {}
 		  }
-		  function normalizeHref(href){
-		    try { href = String(href || ''); } catch(_){ href = ''; }
-		    return href.replace(/^(\\\.\\\/)?#?['!:~]?/, '');
-		  }
+          function normalizeHref(href){
+            try { href = String(href || ''); } catch(_){ href = ''; }
+            // 去除開頭的 "./"、"/"、"#"
+            return href.replace(/^(\\\.\\\/)?\\/?#?/, '');
+          }
 		  function fetchTooltip(id, cb){
 		    if (!id) return;
 		    if (cache[id]) { try { console.log('[Tooltip] cache hit', id); } catch(_l) {} cb(cache[id]); return; }
@@ -1389,6 +1390,7 @@ function normalizeLinkId(raw: string): string {
     let id = String(raw || '');
     id = id.replace(/^['!:~]/, '');
     id = id.replace(/^\.(?:\/)?/, '');
+    id = id.replace(/^\//, '');
     id = id.replace(/^#/, '');
     return id;
   } catch(_e) { return raw || ''; }
