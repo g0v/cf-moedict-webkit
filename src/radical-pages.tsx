@@ -1,6 +1,7 @@
 import { renderToString } from 'preact-render-to-string';
 import { Env } from './types';
-import { NavbarComponent } from './navbar-component';
+import { NavbarComponent } from './components/navbar';
+import { RadicalTable, RadicalBucket } from './views/radical-pages';
 
 function requireDictionaryBaseUrl(env: Env): string {
 	const base = env.DICTIONARY_BASE_URL;
@@ -29,79 +30,16 @@ function wrapHtml(title: string, body: string, assetBaseUrl: string): string {
 	return `<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-\t<meta charset="utf-8">
-\t<title>${escapeHtml(title)} - 部首表 - 萌典</title>
-\t<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
-\t<link rel="stylesheet" href="${assetBaseUrl}/styles.css">
-\t<link rel="stylesheet" href="${assetBaseUrl}/css/cupertino/jquery-ui-1.10.4.custom.css">
+	<meta charset="utf-8">
+	<title>${escapeHtml(title)} - 部首表 - 萌典</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+	<link rel="stylesheet" href="${assetBaseUrl}/styles.css">
+	<link rel="stylesheet" href="${assetBaseUrl}/css/cupertino/jquery-ui-1.10.4.custom.css">
 </head>
 <body>
 ${body}
 </body>
 </html>`;
-}
-
-function RadicalTable(props: { data: string[][], isCrossStrait: boolean }) {
-	const { data, isCrossStrait } = props;
-	const prefix = isCrossStrait ? '/~@' : '/@';
-	return (
-		<div className="result" style={{ marginTop: '50px' }}>
-			<h1 className="title" style={{ marginTop: '0' }}>部首表</h1>
-			<div className="entry">
-				<div className="entry-item list">
-					{(Array.isArray(data) ? data : []).map((row, idx) => {
-						const list = Array.isArray(row) ? row.filter(Boolean) : [];
-						return (
-						<div key={idx} style={{ margin: '8px 0' }}>
-							<span className="stroke-count" style={{ marginRight: '8px' }}>{idx}</span>
-							<span className="stroke-list">
-								{list.map((radical, i) => (
-									<a key={i} className="stroke-char" href={`${prefix}${radical}`} style={{ marginRight: '6px' }}>{radical}</a>
-								))}
-							</span>
-							<hr style={{ margin: '0', padding: '0', height: '0' }} />
-						</div>
-					)
-					})}
-				</div>
-			</div>
-		</div>
-	);
-}
-
-function RadicalBucket(props: { radical: string, data: string[][], backHref: string }) {
-	const { radical, data, backHref } = props;
-	return (
-		<div className="result" style={{ marginTop: '50px' }}>
-			<h1 className="title" style={{ marginTop: '0' }}>{radical} 部</h1>
-			<p><a className="xref" href={backHref}>回部首表</a></p>
-			<div className="entry">
-				<div className="entry-item list">
-					{(Array.isArray(data) ? data : []).map((row, idx) => {
-						const list = Array.isArray(row) ? row.filter(Boolean) : [];
-						return (
-						<div key={idx} style={{ margin: '8px 0' }}>
-							<span className="stroke-count" style={{ marginRight: '8px' }}>{idx}</span>
-							<span className="stroke-list">
-								{list.map((ch, i) => (
-									<a
-										key={i}
-										className="stroke-char"
-										href={backHref.startsWith('/~@') ? `/~${ch}` : `/${ch}`}
-										style={{ marginRight: '6px' }}
-									>
-										{ch}
-									</a>
-								))}
-							</span>
-							<hr style={{ margin: '0', padding: '0', height: '0' }} />
-						</div>
-					)
-					})}
-				</div>
-			</div>
-		</div>
-	);
 }
 
 export async function handleRadicalPageRequest(url: URL, env: Env): Promise<Response> {

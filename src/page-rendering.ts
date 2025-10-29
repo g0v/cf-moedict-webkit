@@ -2,11 +2,11 @@ import { Env, DictionaryLang, TITLE_OF } from './types';
 import { parseTextFromUrl, fixMojibake, getCORSHeaders } from './index';
 import { lookupDictionaryEntry, getDefinition } from './dictionary';
 import { renderToString } from 'preact-render-to-string';
-import { DictionaryPage, SearchResultsPage, NotFoundPage } from './preact-components';
+import { DictionaryPage, SearchResultsPage, NotFoundPage } from './views/dictionary';
 import { handleRadicalPageRequest } from './radical-pages.tsx';
-import { NavbarComponent } from './navbar-component';
-import { AboutPage } from './about-page';
-import { StarredPageSSR } from './starred-page';
+import { NavbarComponent } from './components/navbar';
+import { AboutPage } from './views/about';
+import { StarredPageSSR } from './views/starred-page';
 import { decorateRuby } from './bopomofo-pinyin-utils';
 import { rightAngle } from './ruby2hruby';
 
