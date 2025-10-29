@@ -3,7 +3,7 @@ import { parseTextFromUrl, fixMojibake, getCORSHeaders } from './index';
 import { lookupDictionaryEntry, getDefinition } from './dictionary';
 import { renderToString } from 'preact-render-to-string';
 import { DictionaryPage, SearchResultsPage, NotFoundPage } from './views/dictionary';
-import { handleRadicalPageRequest } from './radical-pages.tsx';
+import { handleRadicalPageRequest } from './radical-functions.tsx';
 import { NavbarComponent } from './components/navbar';
 import { AboutPage } from './views/about';
 import { StarredPageSSR } from './views/starred-page';
