@@ -302,8 +302,8 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 			// 過濾掉 about 頁面
 			if (word === 'about.html' || word.startsWith('about')) return false;
 
-			// 過濾掉字詞紀錄簿和其他特殊路由（以 = 或 @ 開頭）
-			if (word === '=*' || word.startsWith('=') || word.startsWith('@')) return false;
+			// 過濾掉字詞紀錄簿等特殊路由（以 = 開頭）
+			if (word === '=*' || word.startsWith('=')) return false;
 
 			// 過濾掉包含斜線的路徑（通常是多層路徑，不是字詞）
 			if (word.includes('/')) return false;
