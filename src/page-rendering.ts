@@ -29,8 +29,17 @@ export async function handlePageRequest(url: URL, env: Env): Promise<Response> {
 		const tooltip = url.searchParams.get('tooltip');
 		if (tooltip === '1') {
 			const idParam = url.searchParams.get('id') || '';
-			const normalizedId = normalizeLinkId(decodeURIComponent(idParam));
-			const html = await buildTooltipHTML(normalizedId, lang, env);
+			const decodedId = decodeURIComponent(idParam);
+			// 對於部首相關的 id（@ 或 ~@），直接使用原始 id 以保留 ~ 前綴
+			// 對於其他情況，使用 normalizeLinkId 處理
+			let idToUse = decodedId;
+			if (!decodedId.startsWith('@') && !decodedId.startsWith('~@')) {
+				idToUse = normalizeLinkId(decodedId);
+			} else {
+				// 對於 @ 開頭的，只移除前導的 ./、/、#
+				idToUse = decodedId.replace(/^\.(?:\/)?/, '').replace(/^\//, '').replace(/^#/, '');
+			}
+			const html = await buildTooltipHTML(idToUse, lang, env);
 			return new Response(html, {
 				headers: {
 					'Content-Type': 'text/html; charset=utf-8',
@@ -921,6 +930,71 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 			margin: 0px 5px 0 5px;
 		}
 
+		/* 紅底白字的詞性標籤和筆畫數字樣式（對齊原專案） */
+		.part-of-speech {
+		    position: relative !important;
+			display: inline-block;
+			background-color: #6B0000; /* 深紅底 */
+			color: #ffffff; /* 白字 */
+			padding: 2px 8px; /* 橫向 padding 對齊部首頁 */
+			border-radius: 4px;
+			margin-right: 8px;
+			font-weight: normal;
+			vertical-align: baseline;
+		}
+
+		/* 筆畫數字標籤樣式（部首頁使用） */
+		.stroke-count {
+			display: inline-block;
+			background-color: #6B0000; /* 深紅底 */
+			color: #ffffff; /* 白字 */
+			padding: 2px 8px; /* 橫向 padding */
+			border-radius: 4px;
+			margin-right: 8px;
+			font-weight: normal;
+			vertical-align: baseline;
+		}
+
+		/* 部首列表容器樣式（避免與紅底白字壓板） */
+		.stroke-list {
+			display: inline-block;
+			vertical-align: baseline;
+		}
+
+		/* ToolTip 中的筆畫數字和部首列表布局 */
+		.ui-tooltip .stroke-list {
+			margin-left: 0;
+			padding-left: 0;
+		}
+
+		.ui-tooltip .stroke-list .stroke-char {
+			margin: 0 6px !important;
+		}
+
+		/* ToolTip 中詞性標籤和列表對齊在同一水平線上 */
+		.ui-tooltip .entry-item {
+			display: flex;
+			align-items: flex-start;
+			flex-wrap: wrap;
+			gap: .75em;
+		}
+		.ui-tooltip .entry-item .part-of-speech {
+			flex-shrink: 0;
+		}
+
+		.ui-tooltip .entry-item ol {
+			flex: 1;
+			margin-top: 0;
+			margin-bottom: 0;
+			margin-left: 0 !important;
+			padding-left: 0;
+		}
+
+		/* 有詞性標籤時，調整 ol 的 margin */
+		.ui-tooltip .entry-item ol.margin-modified {
+			margin-left: -2em !important;
+		}
+
 		.bopomofo .bopomofo {
 			font-family: "MOESongUN", "教育部標準宋體UN", "全字庫正宋體", "TW-Sung-98_1", "教育部標準宋體", "CMEXa1", "新細明體", "PMingLiU", "MingLiU", "全字庫正楷體", "TW-Kai-98_1", "教育部標準楷書", "kai-pc", "CMEXc1", "標楷體", "BiauKai", "DFKaiShu-SB-Estd-BF", sans-serif, "HANNOMmoesubset-Regular", "HAN NOM A", "HAN NOM B";
 			font-weight: 501;
@@ -1404,10 +1478,111 @@ function untag(input: string): string {
 }
 
 /**
+ * 建立部首 ToolTip HTML
+ */
+async function buildRadicalTooltipHTML(id: string, lang: DictionaryLang, env: Env): Promise<string | null> {
+  try {
+    const dictBase = env.DICTIONARY_BASE_URL?.replace(/\/$/, '');
+    if (!dictBase) return null;
+
+    const isCn = id.startsWith('~@');
+    const langKey = isCn ? 'c' : 'a';
+    const path = id.replace(/^\//, '');
+
+    // 正規化資料的輔助函數
+    const normalizeRows = (raw: any): string[][] => {
+      try {
+        if (!raw) return [];
+        if (typeof raw === 'object' && !Array.isArray(raw)) {
+          const keys = Object.keys(raw).filter(k => /^\d+$/.test(k)).map(k => parseInt(k, 10));
+          const max = keys.length ? Math.max(...keys) : -1;
+          const rows: string[][] = [];
+          for (let i = 0; i <= max; i++) {
+            const row = raw[String(i)] || raw[i] || [];
+            rows[i] = Array.isArray(row) ? row.filter(Boolean) : [];
+          }
+          return rows;
+        }
+        if (Array.isArray(raw) && raw.every((r: any) => Array.isArray(r) || r == null)) {
+          return raw.map((r: any) => Array.isArray(r) ? r.filter(Boolean) : []);
+        }
+        if (Array.isArray(raw)) {
+          return [raw.filter(Boolean)];
+        }
+        return [];
+      } catch(_e) { return []; }
+    };
+
+    // 處理部首表 (@ 或 ~@)
+    if (path === '@' || path === '~@') {
+      const api = `${dictBase}/${langKey}/%40.json`;
+      const raw = await fetch(api, { headers: { 'Accept': 'application/json' } }).then(r => r.ok ? r.json() : null);
+      if (!raw) return null;
+      const data = normalizeRows(raw);
+
+      // 生成簡化的部首表 ToolTip（只顯示前幾筆畫的部首）
+      let html = '<div class="title"><span class="h1">部首表</span></div><div class="entry"><div class="entry-item"><div style="max-height: 300px; overflow-y: auto;">';
+      for (let i = 0; i < data.length; i++) {
+        const radicals = data[i] || [];
+        if (radicals.length > 0) {
+          html += `<div><span class="part-of-speech">${i}</span><span class="stroke-list">`;
+          const prefix = isCn ? '/~@' : '/@';
+          radicals.forEach((rad: string) => {
+            html += `<a href="${prefix}${encodeURIComponent(rad)}" class="stroke-char">${escapeHtml(rad)}</a>`;
+          });
+          html += '</span></div>';
+        }
+      }
+      html += '</div></div></div>';
+      return html;
+    }
+
+    // 處理特定部首 (@{radical} 或 ~@{radical})
+    const m = isCn ? path.match(/^~@(.+)$/) : path.match(/^@(.+)$/);
+    const radical = m ? decodeURIComponent(m[1]) : '';
+    if (!radical) return null;
+
+    const api = `${dictBase}/${langKey}/%40${encodeURIComponent(radical)}.json`;
+    const raw = await fetch(api, { headers: { 'Accept': 'application/json' } }).then(r => r.ok ? r.json() : null);
+    if (!raw) return null;
+    const data = normalizeRows(raw);
+
+    // 生成簡化的部首字列表 ToolTip
+    let html = `<div class="title"><span class="h1">${escapeHtml(radical)} 部</span></div><div class="entry"><div class="entry-item"><div style="max-height: 300px; overflow-y: auto;">`;
+    for (let i = 0; i < Math.min(data.length, 8); i++) {
+      const chars = data[i] || [];
+      if (chars.length > 0) {
+        html += `<div><span class="part-of-speech">${i}</span><span class="stroke-list">`;
+        const prefix = isCn ? '/~' : '/';
+        chars.slice(0, 15).forEach((ch: string) => {
+          html += `<a href="${prefix}${encodeURIComponent(ch)}" class="stroke-char">${escapeHtml(ch)}</a>`;
+        });
+        if (chars.length > 15) {
+          html += `<span style="color: #666;">（還有 ${chars.length - 15} 個字）</span>`;
+        }
+        html += '</span></div>';
+      }
+    }
+    html += '</div></div></div>';
+    return html;
+  } catch(_e) {
+    return null;
+  }
+}
+
+/**
  * 建立簡介框 HTML（盡量複刻原專案結構，但用現有資料）
  */
 async function buildTooltipHTML(id: string, lang: DictionaryLang, env: Env): Promise<string> {
   try {
+    // 優先處理部首相關的 ToolTip
+    if (id === '@' || id === '~@' || id.startsWith('@') || id.startsWith('~@')) {
+      const radicalTooltip = await buildRadicalTooltipHTML(id, lang, env);
+      if (radicalTooltip) {
+        return radicalTooltip;
+      }
+    }
+
     // 先嘗試完整詞條
     const entry = await lookupDictionaryEntry(id, lang, env);
     if (entry) {
@@ -1441,7 +1616,9 @@ async function buildTooltipHTML(id: string, lang: DictionaryLang, env: Env): Pro
             return `<li><p class="definition"><span class="def">${defText}</span></p></li>`;
           })
           .join('');
-        return `<div class="entry-item">${posHTML ? posHTML : ''}<ol>${olHTML}</ol></div>`;
+        // 當有詞性標籤時，給 ol 添加 margin-modified className
+        const olClassAttr = posHTML ? ' class="margin-modified"' : '';
+        return `<div class="entry-item">${posHTML ? posHTML : ''}<ol${olClassAttr}>${olHTML}</ol></div>`;
       }).join('');
 
       // 使用 decorateRuby 和 rightAngle 生成正確的注音拼音顯示
