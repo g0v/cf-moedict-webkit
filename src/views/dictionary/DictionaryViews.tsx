@@ -186,7 +186,7 @@ export function DictionaryPage(props: DictionaryPageProps) {
 
 										{/* 例句/引文 */}
 										{def.example && def.example.map((ex: string, exIdx: number) => (
-											<div key={exIdx} className="example" dangerouslySetInnerHTML={{ __html: ex }} />
+											<div key={exIdx} className="example" dangerouslySetInnerHTML={{ __html: formatExampleIcon(ex) }} />
 										))}
 										{def.quote && def.quote.map((q: string, qIdx: number) => (
 											<div key={qIdx} className="quote" dangerouslySetInnerHTML={{ __html: q }} />
@@ -392,4 +392,10 @@ function untag(input: string): string {
 	return input.replace(/<[^>]*>/g, '');
 }
 
+/**
+ * 將 例⃝ 轉換為 HTML 標籤
+ */
+function formatExampleIcon(input: string): string {
+	return input.replace('例⃝', `<span class="specific">例</span>`);
+}
 
