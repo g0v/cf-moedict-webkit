@@ -4,7 +4,6 @@
  */
 
 import { DictionaryLang } from '../../types';
-import { NavbarComponent } from '../../components/navbar';
 
 /**
  * 字詞紀錄簿頁面組件 Props
@@ -22,17 +21,7 @@ export function StarredPage(props: StarredPageProps) {
 	const { currentLang, recentWords, onClearHistory } = props;
 
 	return (
-		<>
-			{/* 導航列 */}
-			<NavbarComponent
-				currentLang={currentLang}
-				onLangChange={(newLang) => {
-					// TODO: 實現語言切換邏輯
-					console.log('語言切換到:', newLang);
-				}}
-			/>
-
-			<div className="result">
+		<div className="result">
 				<h1 className="title">字詞紀錄簿</h1>
 
 				{/* 收藏字詞區域（交由前端腳本渲染） */}
@@ -70,8 +59,7 @@ export function StarredPage(props: StarredPageProps) {
 						</div>
 					</div>
 				)}
-			</div>
-		</>
+		</div>
 	);
 }
 
@@ -81,15 +69,6 @@ export function StarredPage(props: StarredPageProps) {
 export function StarredPageSSR() {
 	return (
 		<>
-			{/* 導航列 */}
-			<NavbarComponent
-				currentLang="a"
-				onLangChange={(newLang) => {
-					// TODO: 實現語言切換邏輯
-					console.log('語言切換到:', newLang);
-				}}
-			/>
-
 			<div className="result">
 				<h1 className="title">字詞紀錄簿</h1>
 

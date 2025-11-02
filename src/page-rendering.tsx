@@ -1,3 +1,4 @@
+import { ComponentChildren } from 'preact';
 import { Env, DictionaryLang, TITLE_OF } from './types';
 import { parseTextFromUrl, fixMojibake, getCORSHeaders } from './index';
 import { lookupDictionaryEntry, getDefinition } from './dictionary';
@@ -9,6 +10,8 @@ import { AboutPage } from './views/about';
 import { StarredPageSSR } from './views/starred-page';
 import { decorateRuby } from './bopomofo-pinyin-utils';
 import { rightAngle } from './ruby2hruby';
+import { MainLayout } from './layouts';
+import { RouteState } from './router/state';
 
 /**
  * 處理頁面渲染請求
@@ -52,7 +55,13 @@ export async function handlePageRequest(url: URL, env: Env): Promise<Response> {
 	// 處理字詞紀錄簿路由
 	if (text === '=*' || url.pathname === '/=*') {
 		console.log('🔍 [HandlePageRequest] 處理字詞紀錄簿頁面');
-		const bodyHTML = renderToString(StarredPageSSR());
+		const route: RouteState = {
+			view: 'starred',
+			lang,
+			source: 'path',
+			raw: text
+		};
+		const bodyHTML = renderLayoutWithNavbar(route, lang, <StarredPageSSR />);
 		const html = generateHTMLWrapper('字詞紀錄簿', bodyHTML, lang, env);
 
 		return new Response(html, {
@@ -70,7 +79,21 @@ export async function handlePageRequest(url: URL, env: Env): Promise<Response> {
 		if (entry) {
 			// 找到完整詞條，渲染字典頁面
 			console.log('✅ [HandlePageRequest] 找到詞條:', entry.title);
-			const bodyHTML = renderToString(DictionaryPage({ entry, text: fixedText, lang }));
+			const route: RouteState = {
+				view: 'dictionary',
+				lang,
+				source: 'path',
+				raw: text,
+				payload: {
+					term: fixedText,
+					mode: 'entry'
+				}
+			};
+			const bodyHTML = renderLayoutWithNavbar(
+				route,
+				lang,
+				<DictionaryPage entry={entry} text={fixedText} lang={lang} />
+			);
 			const html = generateHTMLWrapper(fixedText, bodyHTML, lang, env);
 
 			return new Response(html, {
@@ -96,7 +119,21 @@ export async function handlePageRequest(url: URL, env: Env): Promise<Response> {
 		if (segments.length > 0) {
 			// 找到部分結果
 			console.log('✅ [HandlePageRequest] 找到', segments.length, '個分字結果');
-			const bodyHTML = renderToString(SearchResultsPage({ text: fixedText, segments }));
+			const route: RouteState = {
+				view: 'dictionary',
+				lang,
+				source: 'path',
+				raw: text,
+				payload: {
+					term: fixedText,
+					mode: 'search'
+				}
+			};
+			const bodyHTML = renderLayoutWithNavbar(
+				route,
+				lang,
+				<SearchResultsPage text={fixedText} segments={segments} />
+			);
 			const html = generateHTMLWrapper(fixedText, bodyHTML, lang, env);
 
 			return new Response(html, {
@@ -109,7 +146,17 @@ export async function handlePageRequest(url: URL, env: Env): Promise<Response> {
 
 		// 3. 完全找不到
 		console.log('❌ [HandlePageRequest] 完全找不到結果');
-		const bodyHTML = renderToString(NotFoundPage({ text: fixedText }));
+		const route: RouteState = {
+			view: 'dictionary',
+			lang,
+			source: 'path',
+			raw: text,
+			payload: {
+				term: fixedText,
+				mode: 'not-found'
+			}
+		};
+		const bodyHTML = renderLayoutWithNavbar(route, lang, <NotFoundPage text={fixedText} />);
 		const html = generateHTMLWrapper(fixedText, bodyHTML, lang, env);
 
 		return new Response(html, {
@@ -132,6 +179,15 @@ export async function handlePageRequest(url: URL, env: Env): Promise<Response> {
 			},
 		});
 	}
+}
+
+function renderLayoutWithNavbar(route: RouteState, lang: DictionaryLang, content: ComponentChildren): string {
+	const navbar = <NavbarComponent currentLang={lang} />;
+	return renderToString(
+		<MainLayout initialRoute={route} navbar={navbar}>
+			{content}
+		</MainLayout>
+	);
 }
 
 /**
@@ -254,6 +310,81 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 
 
 	<!-- 處理 # 路由和首頁重定向的前端腳本 -->
+	<script>
+		(function(){
+			var ROUTER_EVENT = 'moedict:navigate';
+			function encodeToken(token){
+				try { return encodeURIComponent(token); } catch (_e) { return token; }
+			}
+			function normalizeHash(rawToken){
+				var token = rawToken;
+				try { token = decodeURIComponent(rawToken || ''); } catch(_e) { token = rawToken || ''; }
+				token = token.trim();
+				if (!token || token === '#') { return window.location.pathname || '/'; }
+				if (token === '=*') { return '/=*'; }
+				if (token === '@' || token === '%40') { return '/@'; }
+				if (token === '~@' || token === '~%40') { return '/~@'; }
+				return '/' + encodeToken(token);
+			}
+			function normalizeHref(href){
+				if (!href) { return null; }
+				if (href === '#') { return null; }
+				if (href.indexOf('javascript:') === 0) { return null; }
+				if (href.charAt(0) === '#') {
+					return { href: normalizeHash(href.slice(1)), handled: true };
+				}
+				var url;
+				try { url = new URL(href, window.location.href); }
+				catch(_e) { return null; }
+				if (url.origin !== window.location.origin) {
+					return { href: url.href, handled: false };
+				}
+				return { href: url.pathname + (url.search || '') + (url.hash || ''), handled: true };
+			}
+			function absoluteHref(href){
+				try { return new URL(href, window.location.origin).href; }
+				catch(_e) { return href; }
+			}
+			function pushHistory(href){
+				try { window.history.pushState({ href: href }, '', href); } catch(_e) {}
+			}
+			function reloadTo(href){
+				if (window.location.href === href) {
+					window.location.reload();
+				} else {
+					window.location.href = href;
+				}
+			}
+			function dispatchNavigate(href){
+				try { window.dispatchEvent(new CustomEvent(ROUTER_EVENT, { detail: { href: href } })); } catch(_e) {}
+			}
+			function go(target){
+				var info = normalizeHref(target);
+				if (!info) { return; }
+				var absolute = absoluteHref(info.href);
+				pushHistory(absolute);
+				dispatchNavigate(absolute);
+				reloadTo(absolute);
+			}
+			function handleClick(e){
+				if (e.defaultPrevented) { return; }
+				if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) { return; }
+				var anchor = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+				if (!anchor) { return; }
+				var href = anchor.getAttribute('href') || '';
+				if (!href) { return; }
+				var info = normalizeHref(href);
+				if (!info || !info.handled) { return; }
+				var absolute = absoluteHref(info.href);
+				e.preventDefault();
+				pushHistory(absolute);
+				dispatchNavigate(absolute);
+				reloadTo(absolute);
+			}
+			window.__MOEDICT_ROUTER__ = { go: go, normalize: normalizeHref };
+			document.addEventListener('click', handleClick);
+		})();
+	</script>
 	<script>
 		// 全域 LRU 記錄函數（優先定義，供所有腳本使用）
 			var addToLRU = (function() {

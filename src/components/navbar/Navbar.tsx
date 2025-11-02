@@ -3,14 +3,18 @@
  * 復刻原專案 moedict-webkit 的導航列功能
  */
 
+import { useCallback } from 'preact/hooks';
 import { DictionaryLang } from '../../types';
+import { useRouter } from '../../layouts';
+import { getLangPrefix } from '../../router/state';
 
 /**
  * 導航列組件 Props
  */
 interface NavbarProps {
-	currentLang: DictionaryLang;
-	onLangChange: (lang: DictionaryLang) => void;
+	currentLang?: DictionaryLang;
+	onLangChange?: (lang: DictionaryLang) => void;
+	onNavigate?: (href: string) => void;
 }
 
 /**
@@ -48,9 +52,35 @@ const LANG_SPECIAL_PAGES = {
  * 主要導航列組件
  */
 export function NavbarComponent(props: NavbarProps) {
-	const { currentLang, onLangChange } = props;
-	const currentLangOption = LANG_OPTIONS.find(opt => opt.key === currentLang);
+	const router = useRouter();
+	const resolvedLang = (props.currentLang ?? router.route.lang) as DictionaryLang;
+	const currentLangOption = LANG_OPTIONS.find(opt => opt.key === resolvedLang);
 	const escAttr = (s: string) => (s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+
+	const handleLangChange = useCallback((nextLang: DictionaryLang) => {
+		if (props.onLangChange) {
+			props.onLangChange(nextLang);
+			return;
+		}
+		try {
+			const prefix = getLangPrefix(nextLang);
+			const currentRoute = router.route;
+			const currentTerm = currentRoute.view === 'dictionary' ? (currentRoute.payload?.term || '') : '';
+			const token = `${prefix}${currentTerm}`.trim();
+			const target = token ? `/${encodeURIComponent(token)}` : '/';
+			router.navigate(target);
+		} catch (_err) {
+			router.navigate('/');
+		}
+	}, [props, router]);
+
+	const handleNavigate = useCallback((href: string) => {
+		if (props.onNavigate) {
+			props.onNavigate(href);
+			return;
+		}
+		router.navigate(href);
+	}, [props.onNavigate, router]);
 
 	return (
 		<>
@@ -92,7 +122,7 @@ export function NavbarComponent(props: NavbarProps) {
 											className={`lang-option ${option.key}`}
 											onClick={(e) => {
 												e.preventDefault();
-												onLangChange(option.key);
+								handleLangChange(option.key);
 											}}
 										>
 											{option.label}
@@ -104,6 +134,10 @@ export function NavbarComponent(props: NavbarProps) {
 											<a
 												href={page.href}
 												className={`lang-option ${option.key} ${page.href.includes('諺語') ? 'idiom' : ''}`}
+									onClick={(e) => {
+										e.preventDefault();
+										handleNavigate(page.href);
+									}}
 											>
 												{page.label}
 											</a>
@@ -117,7 +151,14 @@ export function NavbarComponent(props: NavbarProps) {
 
 					{/* 字詞紀錄簿按鈕 */}
 					<li id="btn-starred">
-						<a title="字詞紀錄簿" href="#=*">
+				<a
+					title="字詞紀錄簿"
+					href="#=*"
+					onClick={(e) => {
+						e.preventDefault();
+						handleNavigate('#=*');
+					}}
+				>
 							<i className="icon-bookmark-empty"></i>
 						</a>
 					</li>
@@ -167,8 +208,8 @@ export function NavbarComponent(props: NavbarProps) {
 					<li style={{ display: 'inline-block' }} className="web-inline-only">
 					<div id="gcse">
 						<span
-							className={`lang-${currentLang}-only`}
-							dangerouslySetInnerHTML={{ __html: `<gcse:search webSearchQueryAddition="${escAttr(getSearchQueryAddition(currentLang))}"></gcse:search>` }}
+						className={`lang-${resolvedLang}-only`}
+						dangerouslySetInnerHTML={{ __html: `<gcse:search webSearchQueryAddition="${escAttr(getSearchQueryAddition(resolvedLang))}"></gcse:search>` }}
 						/>
 					</div>
 					</li>
@@ -231,14 +272,6 @@ export function NavbarComponent(props: NavbarProps) {
 				  function ensureDropdown(cb){ try { if (window.jQuery && window.jQuery.fn && window.jQuery.fn.dropdown) return cb(); } catch(_){} load('/js/bootstrap/dropdown.js', cb); }
 				  function init(){ try { window.jQuery(function(){ try { window.jQuery('.dropdown-toggle').dropdown(); } catch(_e){} }); } catch(_e){} }
 				  ensureJq(function(){ ensureDropdown(init); });
-				  // 部首表快捷：#@ -> /@；#~@ -> /~@
-				  document.addEventListener('click', function(e){
-				    var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
-				    if (!a) return;
-				    var href = a.getAttribute('href') || '';
-				    if (href === '#@') { e.preventDefault(); window.location.href = '/@'; return; }
-				    if (href === '#~@') { e.preventDefault(); window.location.href = '/~@'; return; }
-				  });
 				})();
 				` }}
 			></script>

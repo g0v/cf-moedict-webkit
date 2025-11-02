@@ -2,6 +2,8 @@ import { renderToString } from 'preact-render-to-string';
 import { Env } from './types';
 import { NavbarComponent } from './components/navbar';
 import { RadicalTable, RadicalBucket } from './views/radical-pages';
+import { MainLayout } from './layouts';
+import { RouteState } from './router/state';
 
 function requireDictionaryBaseUrl(env: Env): string {
 	const base = env.DICTIONARY_BASE_URL;
@@ -46,8 +48,9 @@ export async function handleRadicalPageRequest(url: URL, env: Env): Promise<Resp
 	try {
 		const assetBase = env.ASSET_BASE_URL?.replace(/\/$/, '') || '';
 		const dictBase = requireDictionaryBaseUrl(env);
-		const path = url.pathname.replace(/^\//, '');
-		const isCn = url.pathname.startsWith('/~@');
+		const decodedPathname = decodeURIComponent(url.pathname);
+		const path = decodedPathname.replace(/^\//, '');
+		const isCn = decodedPathname.startsWith('/~@');
 		const langKey = isCn ? 'c' : 'a';
 		// 資料正規化：允許 object 或一維陣列
 		const normalizeRows = (raw: any): string[][] => {
@@ -77,11 +80,20 @@ export async function handleRadicalPageRequest(url: URL, env: Env): Promise<Resp
 			const api = `${dictBase}/${langKey}/%40.json`;
 			const raw = await fetchJson(api);
 			const data = normalizeRows(raw); // [[radicals], ...] by strokes
+			const initialRoute: RouteState = {
+				view: 'radical',
+				lang: langKey as any,
+				source: 'path',
+				raw: path,
+				payload: { kind: 'table', isCrossStrait: isCn }
+			};
 			const body = renderToString(
-				<>
-					<NavbarComponent currentLang={langKey as any} onLangChange={() => {}} />
+				<MainLayout
+					initialRoute={initialRoute}
+					navbar={<NavbarComponent currentLang={langKey as any} />}
+				>
 					<RadicalTable data={Array.isArray(data) ? data : []} isCrossStrait={isCn} />
-				</>
+				</MainLayout>
 			);
 			return new Response(wrapHtml('部首表', body, assetBase), { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
 		}
@@ -94,11 +106,20 @@ export async function handleRadicalPageRequest(url: URL, env: Env): Promise<Resp
 		const api = `${dictBase}/${langKey}/%40${encodeURIComponent(radical)}.json`;
 		const raw = await fetchJson(api);
 		const data = normalizeRows(raw); // [[chars], ...] by remaining strokes
+		const initialRoute: RouteState = {
+			view: 'radical',
+			lang: langKey as any,
+			source: 'path',
+			raw: path,
+			payload: { kind: 'bucket', radical, isCrossStrait: isCn }
+		};
 		const body = renderToString(
-			<>
-				<NavbarComponent currentLang={langKey as any} onLangChange={() => {}} />
+			<MainLayout
+				initialRoute={initialRoute}
+				navbar={<NavbarComponent currentLang={langKey as any} />}
+			>
 				<RadicalBucket radical={radical} data={Array.isArray(data) ? data : []} backHref={isCn ? '/~@' : '/@'} />
-			</>
+			</MainLayout>
 		);
 		return new Response(wrapHtml(`${radical} 部`, body, assetBase), { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
 	} catch (err: any) {
