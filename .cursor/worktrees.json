@@ -1,0 +1,13 @@
+{
+  "setup-worktree": [
+    "npm install",
+		"npm install --save-dev wrangler@4",
+		"git show master:wrangler.jsonc > wrangler.jsonc"
+  ],
+  "settings": {
+    "worktree.cleanup.enabled": true,
+    "worktree.cleanup.intervalHours": 6,
+    "worktree.cleanup.retentionDays": 7,
+    "worktree.cleanup.maxSizeGB": 1
+  }
+}
