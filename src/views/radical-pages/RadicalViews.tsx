@@ -133,6 +133,139 @@ const RADICAL_LRU_SCRIPT = `
 })();
 `;
 
+const RADICAL_TOOLTIP_SCRIPT = `
+(function(){
+  if (typeof window === 'undefined') { return; }
+  if (window.__RADICAL_TOOLTIP_INIT__) { return; }
+  window.__RADICAL_TOOLTIP_INIT__ = true;
+
+  var ATTR = 'data-radical-id';
+  var tooltipEl = null;
+  var cache = Object.create(null);
+  var showTimer = null;
+  var hideTimer = null;
+  var currentId = null;
+  var currentAnchor = null;
+  var LOADING_HTML = '<div class="entry"><div class="entry-item"><div class="def">載入中…</div></div></div>';
+  var EMPTY_HTML = '<div class="entry"><div class="entry-item"><div class="def">找不到內容</div></div></div>';
+
+  function createTooltip(){
+    if (!tooltipEl) {
+      tooltipEl = document.createElement('div');
+      tooltipEl.className = 'ui-tooltip prefer-pinyin-true';
+      tooltipEl.style.position = 'absolute';
+      tooltipEl.style.display = 'none';
+      tooltipEl.style.zIndex = '9999';
+      document.body.appendChild(tooltipEl);
+      tooltipEl.addEventListener('mouseenter', function(){
+        if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+      });
+      tooltipEl.addEventListener('mouseleave', function(){
+        if (hideTimer) { clearTimeout(hideTimer); }
+        hideTimer = setTimeout(function(){ hideTooltip(); }, 120);
+      });
+    }
+    return tooltipEl;
+  }
+
+  function clamp(val, min, max){
+    if (val < min) { return min; }
+    if (val > max) { return max; }
+    return val;
+  }
+
+  function positionNearAnchor(anchor){
+    if (!anchor) { return; }
+    var el = createTooltip();
+    var rect = anchor.getBoundingClientRect();
+    var scrollX = window.pageXOffset || document.documentElement.scrollLeft || 0;
+    var scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+    var vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+    var vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
+    var w = el.offsetWidth || 240;
+    var h = el.offsetHeight || 160;
+    var minX = scrollX + 8;
+    var maxX = scrollX + Math.max(vw - w - 8, 8);
+    if (maxX < minX) { maxX = minX; }
+    var minY = scrollY + 8;
+    var maxY = scrollY + Math.max(vh - h - 8, 8);
+    if (maxY < minY) { maxY = minY; }
+    var desiredX = scrollX + rect.left + (rect.width / 2) - (w / 2);
+    var desiredY = scrollY + rect.bottom + 12;
+    var nx = clamp(desiredX, minX, maxX);
+    var ny = clamp(desiredY, minY, maxY);
+    el.style.left = nx + 'px';
+    el.style.top = ny + 'px';
+  }
+
+  function fetchTooltip(id, cb){
+    if (!id) { cb(''); return; }
+    if (cache[id]) { cb(cache[id]); return; }
+    try {
+      var u = new URL(window.location.href);
+      u.searchParams.set('tooltip', '1');
+      u.searchParams.set('id', id);
+      fetch(u.toString(), { headers: { 'Accept': 'text/html' } })
+        .then(function(r){ return r.text(); })
+        .then(function(html){ cache[id] = html; cb(html); })
+        .catch(function(){ cb(''); });
+    } catch (_e) {
+      cb('');
+    }
+  }
+
+  function showTooltip(anchor, id){
+    currentId = id;
+    currentAnchor = anchor;
+    var el = createTooltip();
+    el.innerHTML = LOADING_HTML;
+    el.style.display = 'block';
+    positionNearAnchor(currentAnchor);
+    fetchTooltip(id, function(html){
+      if (currentId !== id) { return; }
+      el.innerHTML = html || EMPTY_HTML;
+      el.style.display = 'block';
+      positionNearAnchor(currentAnchor);
+    });
+  }
+
+  function hideTooltip(){
+    if (!tooltipEl) { return; }
+    tooltipEl.style.display = 'none';
+    currentId = null;
+    currentAnchor = null;
+  }
+
+  document.addEventListener('mouseover', function(ev){
+    var anchor = ev.target && ev.target.closest ? ev.target.closest('[' + ATTR + ']') : null;
+    if (!anchor) { return; }
+    var id = anchor.getAttribute(ATTR) || '';
+    if (!id) { return; }
+    if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+    if (showTimer) { clearTimeout(showTimer); }
+    showTimer = setTimeout(function(){ showTooltip(anchor, id); }, 120);
+  });
+
+  document.addEventListener('mouseout', function(ev){
+    var anchor = ev.target && ev.target.closest ? ev.target.closest('[' + ATTR + ']') : null;
+    if (!anchor) { return; }
+    if (showTimer) { clearTimeout(showTimer); showTimer = null; }
+    var toTooltip = ev.relatedTarget && ev.relatedTarget.closest ? ev.relatedTarget.closest('.ui-tooltip') : null;
+    if (toTooltip) { return; }
+    if (hideTimer) { clearTimeout(hideTimer); }
+    hideTimer = setTimeout(function(){ hideTooltip(); }, 150);
+  });
+
+  function refreshPosition(){
+    if (!currentId || !currentAnchor || !tooltipEl || tooltipEl.style.display !== 'block') { return; }
+    positionNearAnchor(currentAnchor);
+  }
+
+  window.addEventListener('scroll', refreshPosition, true);
+  window.addEventListener('resize', refreshPosition);
+})();
+`;
+
 type AnchorMouseEvent = JSX.TargetedMouseEvent<HTMLAnchorElement>;
 
 function shouldHandleWithRouter(event: AnchorMouseEvent): boolean {
@@ -201,12 +334,14 @@ export function RadicalTable(props: RadicalTableProps) {
 									<span className="stroke-list">
 										{list.map((radical, i) => {
 											const intent: RouteNavigateIntent = `${prefix}${radical}`;
+											const tooltipId = `${isCrossStrait ? '~@' : '@'}${radical}`;
 											return (
 												<a
 													key={i}
 													className="stroke-char"
 													href={formatHref(intent)}
 													onClick={createClickHandler(intent)}
+													data-radical-id={tooltipId}
 													style={{ marginRight: '6px' }}
 												>
 													{radical}
@@ -222,6 +357,7 @@ export function RadicalTable(props: RadicalTableProps) {
 				</div>
 			</div>
 			<script dangerouslySetInnerHTML={{ __html: RADICAL_LRU_SCRIPT }} />
+			<script dangerouslySetInnerHTML={{ __html: RADICAL_TOOLTIP_SCRIPT }} />
 		</>
 	);
 }
@@ -235,6 +371,7 @@ interface RadicalBucketProps {
 export function RadicalBucket(props: RadicalBucketProps) {
 	const { radical, data, backHref } = props;
 	const { formatHref, createClickHandler } = useRouterNavigation();
+	const tooltipBackId = backHref.startsWith('/~@') ? '~@' : '@';
 	return (
 		<>
 			<div className="result" style={{ marginTop: '50px' }}>
@@ -244,6 +381,7 @@ export function RadicalBucket(props: RadicalBucketProps) {
 						className="xref"
 						href={formatHref(backHref)}
 						onClick={createClickHandler(backHref)}
+						data-radical-id={tooltipBackId}
 					>
 						回部首表
 					</a>
@@ -279,6 +417,7 @@ export function RadicalBucket(props: RadicalBucketProps) {
 				</div>
 			</div>
 			<script dangerouslySetInnerHTML={{ __html: RADICAL_LRU_SCRIPT }} />
+			<script dangerouslySetInnerHTML={{ __html: RADICAL_TOOLTIP_SCRIPT }} />
 		</>
 	);
 }

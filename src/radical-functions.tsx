@@ -4,6 +4,7 @@ import { NavbarComponent } from './components/navbar';
 import { RadicalTable, RadicalBucket } from './views/radical-pages';
 import { MainLayout } from './layouts';
 import { RouteState } from './router/state';
+import { buildRadicalTooltipHTML } from './radical-tooltip-html';
 
 function requireDictionaryBaseUrl(env: Env): string {
 	const base = env.DICTIONARY_BASE_URL;
@@ -47,6 +48,55 @@ ${body}
 export async function handleRadicalPageRequest(url: URL, env: Env): Promise<Response> {
 	try {
 		const assetBase = env.ASSET_BASE_URL?.replace(/\/$/, '') || '';
+		const tooltip = url.searchParams.get('tooltip');
+		if (tooltip === '1') {
+			const idParam = url.searchParams.get('id') || '';
+			let decodedId = '';
+			try {
+				decodedId = decodeURIComponent(idParam);
+			} catch (_e) {
+				decodedId = idParam;
+			}
+			const normalizedId = decodedId.replace(/^\.(?:\/)?/, '').replace(/^\//, '').trim();
+			const html = await buildRadicalTooltipHTML(normalizedId, env);
+			if (html) {
+				return new Response(html, {
+					headers: { 'Content-Type': 'text/html; charset=utf-8' }
+				});
+			}
+			const safeId = normalizedId || '@';
+			const isTable = safeId === '@' || safeId === '~@';
+			const isCrossStrait = safeId.startsWith('~@');
+			let titleText = safeId;
+			let href = '/@';
+			if (isTable) {
+				titleText = '部首表';
+				href = isCrossStrait ? '/~@' : '/@';
+			} else if (safeId.startsWith('~@')) {
+				const radical = safeId.slice(2);
+				titleText = `${radical} 部`;
+				href = `/~@${encodeURIComponent(radical)}`;
+			} else if (safeId.startsWith('@')) {
+				const radical = safeId.slice(1);
+				titleText = `${radical} 部`;
+				href = `/@${encodeURIComponent(radical)}`;
+			} else {
+				titleText = safeId;
+				href = `/${encodeURIComponent(safeId)}`;
+			}
+			const fallback = `<div class="title" data-title="${escapeHtml(titleText)}">` +
+				`<span class="h1"><a href="${escapeHtml(href)}">${escapeHtml(titleText)}</a></span>` +
+			`</div>` +
+			`<div class="entry">` +
+				`<div class="entry-item">` +
+					`<div class="def">找不到內容</div>` +
+				`</div>` +
+			`</div>`;
+			return new Response(fallback, {
+				status: 404,
+				headers: { 'Content-Type': 'text/html; charset=utf-8' }
+			});
+		}
 		const dictBase = requireDictionaryBaseUrl(env);
 		const decodedPathname = decodeURIComponent(url.pathname);
 		const path = decodedPathname.replace(/^\//, '');

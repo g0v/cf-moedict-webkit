@@ -5,6 +5,7 @@ import { lookupDictionaryEntry, getDefinition } from './dictionary';
 import { renderToString } from 'preact-render-to-string';
 import { DictionaryPage, SearchResultsPage, NotFoundPage } from './views/dictionary';
 import { handleRadicalPageRequest } from './radical-functions.tsx';
+import { buildRadicalTooltipHTML } from './radical-tooltip-html';
 import { NavbarComponent } from './components/navbar';
 import { AboutPage } from './views/about';
 import { StarredPageSSR } from './views/starred-page';
@@ -1672,106 +1673,13 @@ function untag(input: string): string {
 }
 
 /**
- * 建立部首 ToolTip HTML
- */
-async function buildRadicalTooltipHTML(id: string, lang: DictionaryLang, env: Env): Promise<string | null> {
-  try {
-    const dictBase = env.DICTIONARY_BASE_URL?.replace(/\/$/, '');
-    if (!dictBase) return null;
-
-    const isCn = id.startsWith('~@');
-    const langKey = isCn ? 'c' : 'a';
-    const path = id.replace(/^\//, '');
-
-    // 正規化資料的輔助函數
-    const normalizeRows = (raw: any): string[][] => {
-      try {
-        if (!raw) return [];
-        if (typeof raw === 'object' && !Array.isArray(raw)) {
-          const keys = Object.keys(raw).filter(k => /^\d+$/.test(k)).map(k => parseInt(k, 10));
-          const max = keys.length ? Math.max(...keys) : -1;
-          const rows: string[][] = [];
-          for (let i = 0; i <= max; i++) {
-            const row = raw[String(i)] || raw[i] || [];
-            rows[i] = Array.isArray(row) ? row.filter(Boolean) : [];
-          }
-          return rows;
-        }
-        if (Array.isArray(raw) && raw.every((r: any) => Array.isArray(r) || r == null)) {
-          return raw.map((r: any) => Array.isArray(r) ? r.filter(Boolean) : []);
-        }
-        if (Array.isArray(raw)) {
-          return [raw.filter(Boolean)];
-        }
-        return [];
-      } catch(_e) { return []; }
-    };
-
-    // 處理部首表 (@ 或 ~@)
-    if (path === '@' || path === '~@') {
-      const api = `${dictBase}/${langKey}/%40.json`;
-      const raw = await fetch(api, { headers: { 'Accept': 'application/json' } }).then(r => r.ok ? r.json() : null);
-      if (!raw) return null;
-      const data = normalizeRows(raw);
-
-      // 生成簡化的部首表 ToolTip（只顯示前幾筆畫的部首）
-      let html = '<div class="title"><span class="h1">部首表</span></div><div class="entry"><div class="entry-item"><div style="max-height: 300px; overflow-y: auto;">';
-      for (let i = 0; i < data.length; i++) {
-        const radicals = data[i] || [];
-        if (radicals.length > 0) {
-          html += `<div><span class="part-of-speech">${i}</span><span class="stroke-list">`;
-          const prefix = isCn ? '/~@' : '/@';
-          radicals.forEach((rad: string) => {
-            html += `<a href="${prefix}${encodeURIComponent(rad)}" class="stroke-char">${escapeHtml(rad)}</a>`;
-          });
-          html += '</span></div>';
-        }
-      }
-      html += '</div></div></div>';
-      return html;
-    }
-
-    // 處理特定部首 (@{radical} 或 ~@{radical})
-    const m = isCn ? path.match(/^~@(.+)$/) : path.match(/^@(.+)$/);
-    const radical = m ? decodeURIComponent(m[1]) : '';
-    if (!radical) return null;
-
-    const api = `${dictBase}/${langKey}/%40${encodeURIComponent(radical)}.json`;
-    const raw = await fetch(api, { headers: { 'Accept': 'application/json' } }).then(r => r.ok ? r.json() : null);
-    if (!raw) return null;
-    const data = normalizeRows(raw);
-
-    // 生成簡化的部首字列表 ToolTip
-    let html = `<div class="title"><span class="h1">${escapeHtml(radical)} 部</span></div><div class="entry"><div class="entry-item"><div style="max-height: 300px; overflow-y: auto;">`;
-    for (let i = 0; i < Math.min(data.length, 8); i++) {
-      const chars = data[i] || [];
-      if (chars.length > 0) {
-        html += `<div><span class="part-of-speech">${i}</span><span class="stroke-list">`;
-        const prefix = isCn ? '/~' : '/';
-        chars.slice(0, 15).forEach((ch: string) => {
-          html += `<a href="${prefix}${encodeURIComponent(ch)}" class="stroke-char">${escapeHtml(ch)}</a>`;
-        });
-        if (chars.length > 15) {
-          html += `<span style="color: #666;">（還有 ${chars.length - 15} 個字）</span>`;
-        }
-        html += '</span></div>';
-      }
-    }
-    html += '</div></div></div>';
-    return html;
-  } catch(_e) {
-    return null;
-  }
-}
-
-/**
  * 建立簡介框 HTML（盡量複刻原專案結構，但用現有資料）
  */
 async function buildTooltipHTML(id: string, lang: DictionaryLang, env: Env): Promise<string> {
   try {
     // 優先處理部首相關的 ToolTip
     if (id === '@' || id === '~@' || id.startsWith('@') || id.startsWith('~@')) {
-      const radicalTooltip = await buildRadicalTooltipHTML(id, lang, env);
+      const radicalTooltip = await buildRadicalTooltipHTML(id, env);
       if (radicalTooltip) {
         return radicalTooltip;
       }
