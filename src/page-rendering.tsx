@@ -1305,6 +1305,51 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 		  var tooltipEl = null;
 		  var cache = Object.create(null);
 		  var showTimer = null, hideTimer = null;
+
+		  // 檢測是否為觸控裝置
+		  var isTouchDevice = (function(){
+		    try {
+		      return ('ontouchstart' in window) ||
+		             (navigator.maxTouchPoints && navigator.maxTouchPoints > 0) ||
+		             (navigator.msMaxTouchPoints && navigator.msMaxTouchPoints > 0);
+		    } catch(_e) { return false; }
+		  })();
+
+		  // 追蹤最近的觸控事件時間（用於防止點擊後短暫顯示 ToolTip）
+		  var lastTouchTime = 0;
+		  var TOUCH_COOLDOWN = 500; // 觸控事件後 500ms 內不顯示 ToolTip
+
+		  // 監聽觸控事件，標記觸控時間
+		  if (isTouchDevice) {
+		    document.addEventListener('touchstart', function(){
+		      lastTouchTime = Date.now();
+		      // 立即隱藏任何顯示中的 ToolTip
+		      if (showTimer) { clearTimeout(showTimer); showTimer = null; }
+		      if (tooltipEl) { tooltipEl.style.display = 'none'; }
+		      try { console.log('[Tooltip] touch detected, disabled'); } catch(_l) {}
+		    }, { passive: true });
+
+		    document.addEventListener('click', function(){
+		      lastTouchTime = Date.now();
+		      // 立即隱藏任何顯示中的 ToolTip
+		      if (showTimer) { clearTimeout(showTimer); showTimer = null; }
+		      if (tooltipEl) { tooltipEl.style.display = 'none'; }
+		      try { console.log('[Tooltip] click detected, disabled'); } catch(_l) {}
+		    }, { passive: true });
+		  }
+
+		  // 檢查是否應該顯示 ToolTip（非觸控裝置，或觸控冷卻期已過）
+		  function shouldShowTooltip(){
+		    if (isTouchDevice) {
+		      var timeSinceTouch = Date.now() - lastTouchTime;
+		      if (timeSinceTouch < TOUCH_COOLDOWN) {
+		        try { console.log('[Tooltip] touch cooldown active, skip'); } catch(_l) {}
+		        return false;
+		      }
+		    }
+		    return true;
+		  }
+
 		  function createTooltip(){
 		    if (!tooltipEl) {
 		      tooltipEl = document.createElement('div');
@@ -1361,6 +1406,12 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 		    } catch(err) { try { console.log('[Tooltip] build url error', err); } catch(_l) {} }
 		  }
 		  document.addEventListener('mouseover', function(ev){
+		    // 在觸控裝置上，不顯示 ToolTip
+		    if (!shouldShowTooltip()) {
+		      try { console.log('[Tooltip] touch device or cooldown, skip mouseover'); } catch(_l) {}
+		      return;
+		    }
+
 		    console.log('[Tooltip] mouseover');
 		    var a = ev.target && ev.target.closest ? ev.target.closest('.result a[href]:not(.xref)') : null;
 
@@ -1370,6 +1421,12 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 		    if (showTimer) { clearTimeout(showTimer); }
 		    var x = ev.pageX, y = ev.pageY;
 		    showTimer = setTimeout(function(){
+		      // 再次檢查（可能在延遲期間發生觸控事件）
+		      if (!shouldShowTooltip()) {
+		        try { console.log('[Tooltip] touch detected during delay, cancel'); } catch(_l) {}
+		        return;
+		      }
+
 		      var rawHref = a.getAttribute('href');
 		      try { console.log('[Tooltip] raw href', rawHref); } catch(_l) {}
 		      var id = normalizeHref(rawHref);
@@ -1383,6 +1440,12 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 		      try { console.log('[Tooltip] display loading'); } catch(_l) {}
 		      positionNear(x, y);
 		      fetchTooltip(id, function(html){
+		        // 在載入完成後再次檢查
+		        if (!shouldShowTooltip()) {
+		          if (tooltipEl) { tooltipEl.style.display = 'none'; }
+		          try { console.log('[Tooltip] touch detected after fetch, hide'); } catch(_l) {}
+		          return;
+		        }
 		        el.innerHTML = html || '';
 		        el.style.display = 'block';
 		        try { console.log('[Tooltip] content set and shown'); } catch(_l) {}
