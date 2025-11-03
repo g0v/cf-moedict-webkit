@@ -3,7 +3,41 @@
  * 復刻原專案 moedict-webkit 的字詞紀錄簿功能
  */
 
+import { JSX } from 'preact';
+import { useCallback } from 'preact/hooks';
 import { DictionaryLang } from '../../types';
+import { useRouter } from '../../layouts';
+import type { RouteNavigateIntent } from '../../layouts';
+import type { DictionaryRouteMode } from '../../router/state';
+
+type AnchorMouseEvent = JSX.TargetedMouseEvent<HTMLAnchorElement>;
+
+function shouldHandleWithRouter(event: AnchorMouseEvent): boolean {
+	if (!event) {
+		return false;
+	}
+	if (event.defaultPrevented) {
+		return false;
+	}
+	if (event.button !== 0) {
+		return false;
+	}
+	if (event.metaKey || event.altKey || event.ctrlKey || event.shiftKey) {
+		return false;
+	}
+	return true;
+}
+
+function inferDictionaryModeFromTerm(term: string): DictionaryRouteMode {
+	const clean = (term || '').trim();
+	if (!clean) {
+		return 'unknown';
+	}
+	if (clean.startsWith('=')) {
+		return 'search';
+	}
+	return 'entry';
+}
 
 /**
  * 字詞紀錄簿頁面組件 Props
@@ -19,6 +53,38 @@ interface StarredPageProps {
  */
 export function StarredPage(props: StarredPageProps) {
 	const { currentLang, recentWords, onClearHistory } = props;
+	const router = useRouter();
+
+	const formatHref = useCallback((intent: RouteNavigateIntent) => router.formatHref(intent), [router]);
+
+	const navigateIntent = useCallback((intent: RouteNavigateIntent) => {
+		if (typeof intent === 'string') {
+			const resolved = router.resolveHref(intent);
+			router.navigate(resolved);
+			return;
+		}
+		router.navigate(intent);
+	}, [router]);
+
+	const createClickHandler = useCallback((intent: RouteNavigateIntent) => {
+		return (event: AnchorMouseEvent) => {
+			if (!shouldHandleWithRouter(event)) {
+				return;
+			}
+			event.preventDefault();
+			navigateIntent(intent);
+		};
+	}, [navigateIntent]);
+
+	const buildWordIntent = useCallback((term: string): RouteNavigateIntent => ({
+		view: 'dictionary',
+		lang: currentLang,
+		source: 'path',
+		payload: {
+			term,
+			mode: inferDictionaryModeFromTerm(term)
+		}
+	}), [currentLang]);
 
 	return (
 		<div className="result">
@@ -49,13 +115,18 @@ export function StarredPage(props: StarredPageProps) {
 								}}
 							/>
 						</h3>
-						<div className="word-list">
-							{recentWords.map((word, index) => (
+					<div className="word-list">
+						{recentWords.map((word, index) => {
+							const intent = buildWordIntent(word);
+							return (
 								<div key={index} style={{ clear: 'both', display: 'block' }}>
 									<span>·</span>
-									<a href={`/${word}`}>{word}</a>
+									<a href={formatHref(intent)} onClick={createClickHandler(intent)}>
+										{word}
+									</a>
 								</div>
-							))}
+							);
+						})}
 						</div>
 					</div>
 				)}

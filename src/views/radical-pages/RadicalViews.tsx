@@ -1,3 +1,8 @@
+import { JSX } from 'preact';
+import { useCallback } from 'preact/hooks';
+import { useRouter } from '../../layouts';
+import type { RouteNavigateIntent } from '../../layouts';
+
 const RADICAL_LRU_SCRIPT = `
 (function(){
   var LOG = '[RadicalLRU]';
@@ -128,6 +133,51 @@ const RADICAL_LRU_SCRIPT = `
 })();
 `;
 
+type AnchorMouseEvent = JSX.TargetedMouseEvent<HTMLAnchorElement>;
+
+function shouldHandleWithRouter(event: AnchorMouseEvent): boolean {
+	if (!event) {
+		return false;
+	}
+	if (event.defaultPrevented) {
+		return false;
+	}
+	if (event.button !== 0) {
+		return false;
+	}
+	if (event.metaKey || event.altKey || event.ctrlKey || event.shiftKey) {
+		return false;
+	}
+	return true;
+}
+
+function useRouterNavigation() {
+	const router = useRouter();
+
+	const formatHref = useCallback((intent: RouteNavigateIntent) => router.formatHref(intent), [router]);
+
+	const navigateIntent = useCallback((intent: RouteNavigateIntent) => {
+		if (typeof intent === 'string') {
+			const resolved = router.resolveHref(intent);
+			router.navigate(resolved);
+			return;
+		}
+		router.navigate(intent);
+	}, [router]);
+
+	const createClickHandler = useCallback((intent: RouteNavigateIntent) => {
+		return (event: AnchorMouseEvent) => {
+			if (!shouldHandleWithRouter(event)) {
+				return;
+			}
+			event.preventDefault();
+			navigateIntent(intent);
+		};
+	}, [navigateIntent]);
+
+	return { formatHref, createClickHandler };
+}
+
 interface RadicalTableProps {
 	data: string[][];
 	isCrossStrait: boolean;
@@ -136,6 +186,7 @@ interface RadicalTableProps {
 export function RadicalTable(props: RadicalTableProps) {
 	const { data, isCrossStrait } = props;
 	const prefix = isCrossStrait ? '/~@' : '/@';
+	const { formatHref, createClickHandler } = useRouterNavigation();
 	return (
 		<>
 			<div className="result" style={{ marginTop: '50px' }}>
@@ -148,9 +199,20 @@ export function RadicalTable(props: RadicalTableProps) {
 								<div key={idx} style={{ margin: '8px 0' }}>
 									<span className="stroke-count" style={{ marginRight: '8px' }}>{idx}</span>
 									<span className="stroke-list">
-										{list.map((radical, i) => (
-											<a key={i} className="stroke-char" href={`${prefix}${radical}`} style={{ marginRight: '6px' }}>{radical}</a>
-										))}
+										{list.map((radical, i) => {
+											const intent: RouteNavigateIntent = `${prefix}${radical}`;
+											return (
+												<a
+													key={i}
+													className="stroke-char"
+													href={formatHref(intent)}
+													onClick={createClickHandler(intent)}
+													style={{ marginRight: '6px' }}
+												>
+													{radical}
+												</a>
+											);
+										})}
 									</span>
 									<hr style={{ margin: '0', padding: '0', height: '0' }} />
 								</div>
@@ -172,11 +234,20 @@ interface RadicalBucketProps {
 
 export function RadicalBucket(props: RadicalBucketProps) {
 	const { radical, data, backHref } = props;
+	const { formatHref, createClickHandler } = useRouterNavigation();
 	return (
 		<>
 			<div className="result" style={{ marginTop: '50px' }}>
 				<h1 className="title" style={{ marginTop: '0' }}>{radical} 部</h1>
-				<p><a className="xref" href={backHref}>回部首表</a></p>
+				<p>
+					<a
+						className="xref"
+						href={formatHref(backHref)}
+						onClick={createClickHandler(backHref)}
+					>
+						回部首表
+					</a>
+				</p>
 				<div className="entry">
 					<div className="entry-item list">
 						{(Array.isArray(data) ? data : []).map((row, idx) => {
@@ -185,16 +256,20 @@ export function RadicalBucket(props: RadicalBucketProps) {
 								<div key={idx} style={{ margin: '8px 0' }}>
 									<span className="stroke-count" style={{ marginRight: '8px' }}>{idx}</span>
 									<span className="stroke-list">
-										{list.map((ch, i) => (
-											<a
-												key={i}
-												className="stroke-char"
-												href={backHref.startsWith('/~@') ? `/~${ch}` : `/${ch}`}
-												style={{ marginRight: '6px' }}
-											>
-												{ch}
-											</a>
-										))}
+										{list.map((ch, i) => {
+											const intent: RouteNavigateIntent = backHref.startsWith('/~@') ? `/~${ch}` : `/${ch}`;
+											return (
+												<a
+													key={i}
+													className="stroke-char"
+													href={formatHref(intent)}
+													onClick={createClickHandler(intent)}
+													style={{ marginRight: '6px' }}
+												>
+													{ch}
+												</a>
+											);
+										})}
 									</span>
 									<hr style={{ margin: '0', padding: '0', height: '0' }} />
 								</div>

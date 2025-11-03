@@ -3,9 +3,13 @@
  * 復刻原專案 moedict-webkit 的導航列功能
  */
 
+import { Fragment } from 'preact';
+import { JSX } from 'preact';
 import { useCallback } from 'preact/hooks';
 import { DictionaryLang } from '../../types';
 import { useRouter } from '../../layouts';
+import type { RouteNavigateIntent } from '../../layouts';
+import type { DictionaryRouteMode } from '../../router/state';
 import { getLangPrefix } from '../../router/state';
 
 /**
@@ -48,6 +52,35 @@ const LANG_SPECIAL_PAGES = {
 	]
 };
 
+type AnchorMouseEvent = JSX.TargetedMouseEvent<HTMLAnchorElement>;
+
+function shouldHandleWithRouter(event: AnchorMouseEvent): boolean {
+	if (!event) {
+		return false;
+	}
+	if (event.defaultPrevented) {
+		return false;
+	}
+	if (event.button !== 0) {
+		return false;
+	}
+	if (event.metaKey || event.altKey || event.ctrlKey || event.shiftKey) {
+		return false;
+	}
+	return true;
+}
+
+function inferDictionaryModeFromTerm(term: string): DictionaryRouteMode {
+	const clean = (term || '').trim();
+	if (!clean) {
+		return 'unknown';
+	}
+	if (clean.startsWith('=')) {
+		return 'search';
+	}
+	return 'entry';
+}
+
 /**
  * 主要導航列組件
  */
@@ -57,30 +90,61 @@ export function NavbarComponent(props: NavbarProps) {
 	const currentLangOption = LANG_OPTIONS.find(opt => opt.key === resolvedLang);
 	const escAttr = (s: string) => (s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
 
+	const buildLangIntent = useCallback((nextLang: DictionaryLang): RouteNavigateIntent => {
+		const currentRoute = router.route;
+		const prefix = getLangPrefix(nextLang);
+		const currentTerm = currentRoute.view === 'dictionary' ? (currentRoute.payload?.term || '') : '';
+		const token = `${prefix}${currentTerm}`.trim();
+		if (!token) {
+			return { view: 'home', lang: nextLang, source: 'path' };
+		}
+		return {
+			view: 'dictionary',
+			lang: nextLang,
+			source: 'path',
+			payload: {
+				term: currentTerm,
+				mode: inferDictionaryModeFromTerm(currentTerm)
+			}
+		};
+	}, [router.route]);
+
+	const handleNavigate = useCallback((intent: RouteNavigateIntent) => {
+		if (props.onNavigate) {
+			const href = router.formatHref(intent);
+			props.onNavigate(href);
+			return;
+		}
+		if (typeof intent === 'string') {
+			const resolved = router.resolveHref(intent);
+			router.navigate(resolved);
+			return;
+		}
+		router.navigate(intent);
+	}, [props.onNavigate, router]);
+
 	const handleLangChange = useCallback((nextLang: DictionaryLang) => {
 		if (props.onLangChange) {
 			props.onLangChange(nextLang);
 			return;
 		}
-		try {
-			const prefix = getLangPrefix(nextLang);
-			const currentRoute = router.route;
-			const currentTerm = currentRoute.view === 'dictionary' ? (currentRoute.payload?.term || '') : '';
-			const token = `${prefix}${currentTerm}`.trim();
-			const target = token ? `/${encodeURIComponent(token)}` : '/';
-			router.navigate(target);
-		} catch (_err) {
-			router.navigate('/');
-		}
-	}, [props, router]);
+		handleNavigate(buildLangIntent(nextLang));
+	}, [buildLangIntent, handleNavigate, props.onLangChange]);
 
-	const handleNavigate = useCallback((href: string) => {
-		if (props.onNavigate) {
-			props.onNavigate(href);
-			return;
-		}
-		router.navigate(href);
-	}, [props.onNavigate, router]);
+	const formatHref = useCallback((intent: RouteNavigateIntent) => router.formatHref(intent), [router]);
+
+	const createClickHandler = useCallback((intent: RouteNavigateIntent) => {
+		return (event: AnchorMouseEvent) => {
+			if (!shouldHandleWithRouter(event)) {
+				return;
+			}
+			event.preventDefault();
+			handleNavigate(intent);
+		};
+	}, [handleNavigate]);
+
+	const starredIntent: RouteNavigateIntent = '#=*';
+	const starredHref = formatHref(starredIntent);
 
 	return (
 		<>
@@ -109,56 +173,53 @@ export function NavbarComponent(props: NavbarProps) {
 							<b className="caret"></b>
 						</a>
 						<ul role="navigation" className="dropdown-menu">
-						{/* 每種語言及其特殊頁面 */}
-						{LANG_OPTIONS.map(option => {
-							const specialPages = LANG_SPECIAL_PAGES[option.key] || [];
-							return (
-								<>
-									{/* 語言選項 */}
-									<li key={option.key} role="presentation">
-										<a
-											role="menuitem"
-											href={option.href}
-											className={`lang-option ${option.key}`}
-											onClick={(e) => {
-												e.preventDefault();
-								handleLangChange(option.key);
-											}}
-										>
-											{option.label}
-										</a>
-									</li>
-									{/* 該語言的特殊頁面 */}
-									{specialPages.map((page, index) => (
-										<li key={`${option.key}-${index}`} role="presentation">
+							{/* 每種語言及其特殊頁面 */}
+							{LANG_OPTIONS.map(option => {
+								const specialPages = LANG_SPECIAL_PAGES[option.key] || [];
+								const langIntent = buildLangIntent(option.key);
+								const langHref = formatHref(langIntent);
+								return (
+									<Fragment key={option.key}>
+										{/* 語言選項 */}
+										<li role="presentation">
 											<a
-												href={page.href}
-												className={`lang-option ${option.key} ${page.href.includes('諺語') ? 'idiom' : ''}`}
-									onClick={(e) => {
-										e.preventDefault();
-										handleNavigate(page.href);
-									}}
+												role="menuitem"
+												href={langHref}
+												className={`lang-option ${option.key}`}
+												onClick={createClickHandler(langIntent)}
 											>
-												{page.label}
+												{option.label}
 											</a>
 										</li>
-									))}
-								</>
-							);
-						})}
+										{/* 該語言的特殊頁面 */}
+										{specialPages.map((page, index) => {
+											const pageIntent: RouteNavigateIntent = page.href;
+											const pageHref = formatHref(pageIntent);
+											return (
+												<li key={`${option.key}-${index}`} role="presentation">
+													<a
+														href={pageHref}
+														className={`lang-option ${option.key} ${page.href.includes('諺語') ? 'idiom' : ''}`}
+														onClick={createClickHandler(pageIntent)}
+													>
+														{page.label}
+													</a>
+												</li>
+											);
+										})}
+									</Fragment>
+								);
+							})}
 						</ul>
 					</li>
 
 					{/* 字詞紀錄簿按鈕 */}
 					<li id="btn-starred">
-				<a
-					title="字詞紀錄簿"
-					href="#=*"
-					onClick={(e) => {
-						e.preventDefault();
-						handleNavigate('#=*');
-					}}
-				>
+						<a
+							title="字詞紀錄簿"
+							href={starredHref}
+							onClick={createClickHandler(starredIntent)}
+						>
 							<i className="icon-bookmark-empty"></i>
 						</a>
 					</li>

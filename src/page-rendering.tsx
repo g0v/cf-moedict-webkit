@@ -181,7 +181,7 @@ export async function handlePageRequest(url: URL, env: Env): Promise<Response> {
 	}
 }
 
-function renderLayoutWithNavbar(route: RouteState, lang: DictionaryLang, content: ComponentChildren): string {
+export function renderLayoutWithNavbar(route: RouteState, lang: DictionaryLang, content: ComponentChildren): string {
 	const navbar = <NavbarComponent currentLang={lang} />;
 	return renderToString(
 		<MainLayout initialRoute={route} navbar={navbar}>

@@ -22,6 +22,7 @@ export interface RouterContextValue {
 	navigate: (intent: RouteNavigateIntent, options?: NavigateOptions) => void;
 	replace: (intent: RouteNavigateIntent, options?: NavigateOptions) => void;
 	resolveHref: (href: string) => RouteState;
+	formatHref: (intent: RouteNavigateIntent) => string;
 	useHashRouting: boolean;
 }
 
@@ -37,6 +38,7 @@ export const RouterContext = createContext<RouterContextValue>({
 	navigate: noop,
 	replace: noop,
 	resolveHref: (href: string) => parseRouteFromHref(href),
+	formatHref: () => '#',
 	useHashRouting: false
 });
 
@@ -125,6 +127,16 @@ export function MainLayout(props: MainLayoutProps) {
 		return current;
 	}, [resolveHref]);
 
+	const formatHref = useCallback((intent: RouteNavigateIntent): string => {
+		const current = lastRouteRef.current ?? route;
+		const nextRoute = resolveIntent(intent, current);
+		const serialized = serializeRoute(nextRoute, {
+			useHash: preferHashRouting,
+			basePath: '/'
+		});
+		return `${serialized.pathname}${serialized.hash ?? ''}`;
+	}, [preferHashRouting, resolveIntent, route]);
+
 	const navigate = useCallback((intent: RouteNavigateIntent, options?: NavigateOptions) => {
 		const current = lastRouteRef.current;
 		const nextRoute = resolveIntent(intent, current ?? route);
@@ -187,8 +199,9 @@ export function MainLayout(props: MainLayoutProps) {
 		navigate,
 		replace,
 		resolveHref,
+		formatHref,
 		useHashRouting: preferHashRouting
-	}), [navigate, preferHashRouting, replace, resolveHref, route]);
+	}), [formatHref, navigate, preferHashRouting, replace, resolveHref, route]);
 
 	return (
 		<RouterContext.Provider value={contextValue}>
