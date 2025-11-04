@@ -198,7 +198,7 @@ const RADICAL_TOOLTIP_SCRIPT = `
     el.style.top = ny + 'px';
   }
 
-  function fetchTooltip(id, cb){
+  function fetchRadicalTooltip(id, cb){
     if (!id) { cb(''); return; }
     if (cache[id]) { cb(cache[id]); return; }
     try {
@@ -214,15 +214,46 @@ const RADICAL_TOOLTIP_SCRIPT = `
     }
   }
 
-  function showTooltip(anchor, id){
-    currentId = id;
+  function fetchEntryTooltip(anchor, rawId, cb){
+    var entryPath = rawId.slice(6) || anchor.getAttribute('href') || '';
+    if (!entryPath) { cb(''); return; }
+    try {
+      var url = new URL(entryPath, window.location.origin);
+      var cacheKey = 'entry:' + url.pathname + url.search;
+      if (cache[cacheKey]) { cb(cache[cacheKey]); return; }
+      var term = url.pathname.replace(decodeURIComponent('%5C'), '');
+      try {
+        term = decodeURIComponent(term);
+      } catch(_decode) {}
+      url.searchParams.set('tooltip', '1');
+      url.searchParams.set('id', term);
+      fetch(url.toString(), { headers: { 'Accept': 'text/html' } })
+        .then(function(r){ return r.text(); })
+        .then(function(html){ cache[cacheKey] = html; cb(html); })
+        .catch(function(){ cb(''); });
+    } catch (_e) {
+      cb('');
+    }
+  }
+
+  function fetchTooltipForAnchor(anchor, rawId, cb){
+    if (!rawId) { cb(''); return; }
+    if (rawId.indexOf('entry:') === 0) {
+      fetchEntryTooltip(anchor, rawId, cb);
+    } else {
+      fetchRadicalTooltip(rawId, cb);
+    }
+  }
+
+  function showTooltip(anchor, rawId){
+    currentId = rawId;
     currentAnchor = anchor;
     var el = createTooltip();
     el.innerHTML = LOADING_HTML;
     el.style.display = 'block';
     positionNearAnchor(currentAnchor);
-    fetchTooltip(id, function(html){
-      if (currentId !== id) { return; }
+    fetchTooltipForAnchor(anchor, rawId, function(html){
+      if (currentId !== rawId) { return; }
       el.innerHTML = html || EMPTY_HTML;
       el.style.display = 'block';
       positionNearAnchor(currentAnchor);
@@ -371,7 +402,8 @@ interface RadicalBucketProps {
 export function RadicalBucket(props: RadicalBucketProps) {
 	const { radical, data, backHref } = props;
 	const { formatHref, createClickHandler } = useRouterNavigation();
-	const tooltipBackId = backHref.startsWith('/~@') ? '~@' : '@';
+	const isCrossStraitBucket = backHref.startsWith('/~@');
+	const tooltipBackId = isCrossStraitBucket ? '~@' : '@';
 	return (
 		<>
 			<div className="result" style={{ marginTop: '50px' }}>
@@ -395,13 +427,15 @@ export function RadicalBucket(props: RadicalBucketProps) {
 									<span className="stroke-count" style={{ marginRight: '8px' }}>{idx}</span>
 									<span className="stroke-list">
 										{list.map((ch, i) => {
-											const intent: RouteNavigateIntent = backHref.startsWith('/~@') ? `/~${ch}` : `/${ch}`;
+											const intent: RouteNavigateIntent = isCrossStraitBucket ? `/~${ch}` : `/${ch}`;
+											const tooltipId = `entry:${intent}`;
 											return (
 												<a
 													key={i}
 													className="stroke-char"
 													href={formatHref(intent)}
 													onClick={createClickHandler(intent)}
+													data-radical-id={tooltipId}
 													style={{ marginRight: '6px' }}
 												>
 													{ch}

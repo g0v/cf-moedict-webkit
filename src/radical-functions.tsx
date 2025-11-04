@@ -180,6 +180,30 @@ function wrapHtml(title: string, body: string, assetBaseUrl: string): string {
 				width: 100% !important;
 			}
 		}
+
+		/* 部首 Tooltip 樣式與字典頁對齊 */
+		.ui-tooltip .title .h1,
+		.ui-tooltip .title .h1 a {
+			font-family: "Biaodian Pro Serif CNS", "Numeral LF Serif", "MOEDICT", "Fira Sans OT", "Georgia", "Times New Roman", "Zhuyin Kaiti", "TW-Kai-98_1", "教育部標準楷書", "kai-pc", "CMEXc1", "BiauKai", "MOEDICT-IOS-KAI", "DFKaiShu-SB-Estd-BF", "全字庫正楷體", "Kaiti TC", "楷體-繁", "文鼎ＰＬ新中楷", "cwText 楷書", cursive, serif, "HanaMinA", "HanaMinB", "HAN NOM A", "HAN NOM B", "Han Kaiti CNS", cursive, serif !important;
+			color: #000 !important;
+		}
+
+		.ui-tooltip .title .h1 a {
+			text-decoration: none !important;
+		}
+
+		.ui-tooltip .title .h1 a:hover {
+			text-decoration: none !important;
+		}
+
+		.ui-tooltip .stroke-list .stroke-char {
+			color: #000 !important;
+			text-decoration: none !important;
+		}
+
+		.ui-tooltip .stroke-list .stroke-char:hover {
+			text-decoration: none !important;
+		}
 	</style>
 </head>
 <body>
