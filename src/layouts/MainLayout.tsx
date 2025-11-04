@@ -9,6 +9,7 @@ import {
 	parseRouteFromLocation,
 	isSameRoute
 } from '../router/state';
+import { Sidebar } from '../components/sidebar';
 
 export type RouteNavigateIntent = RouteState | string | { href: string } | ((current: RouteState) => RouteState);
 
@@ -207,6 +208,7 @@ export function MainLayout(props: MainLayoutProps) {
 		<RouterContext.Provider value={contextValue}>
 			<div className="app-shell">
 				{renderSlot(navbar, contextValue)}
+				<Sidebar currentLang={route.lang} />
 				<main id="main-content">
 					{renderSlot(children, contextValue)}
 				</main>

@@ -868,11 +868,140 @@ function generateHTMLWrapper(text: string, bodyHTML: string, lang: DictionaryLan
 		}
 
 
-		/* 為內容區域添加適當的 padding */
+		/* 確保主內容區域不會被左側欄遮擋 */
+		#main-content {
+			margin-left: 260px;
+		}
+
+		/* 部首頁的內容區域也需要 margin-left */
 		.result {
 			padding: 20px;
 			max-width: 1200px;
-			margin: 0 auto;
+			margin-left: 0; /* 移除 auto，改為 0，因為父容器已經有 margin-left */
+			margin-right: auto;
+		}
+
+		@media only screen and (max-width: 767px) {
+			#main-content {
+				margin-left: 0; /* 手機版移除左側邊距 */
+				margin-top: 55px;
+			}
+		}
+
+		/* 左側欄（query-box）樣式 - 復刻原專案 */
+		.query-box {
+			width: 260px;
+			position: fixed;
+			border-right: 1px solid hsl(360, 1%, 83%);
+			top: 45px;
+			bottom: 0;
+			z-index: 9;
+			padding: 20px;
+			box-sizing: border-box;
+			background-color: hsl(0, 0%, 97%);
+		}
+
+		@media print {
+			.query-box { display: none; }
+		}
+
+		@media only screen and (max-width: 767px) {
+			/* 手機版：左側欄顯示在頂部橫向 */
+			.query-box {
+				right: auto !important;
+				width: 100% !important;
+				top: 40px !important;
+				height: 65px !important;
+				bottom: auto !important;
+				padding: 15px !important;
+				padding-bottom: 3px !important;
+				z-index: 10 !important;
+				border-right: none !important;
+			}
+
+			#main-content {
+				margin-left: 0; /* 手機版移除左側邊距 */
+			}
+		}
+
+		/* Autocomplete 選單樣式 - 復刻原專案 */
+		.ui-autocomplete {
+			overflow: auto;
+			height: auto !important;
+			position: fixed !important;
+			box-sizing: border-box;
+			background: #fff;
+			border: 1px solid #ddd;
+			border-radius: 4px;
+			box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+		}
+
+		.ui-autocomplete ul {
+			list-style: none;
+			margin: 0;
+			padding: 0;
+		}
+
+		.ui-autocomplete .ui-menu-item {
+			padding: 8px 12px;
+			cursor: pointer;
+			border-bottom: 1px solid #eee;
+		}
+
+		.ui-autocomplete .ui-menu-item:hover {
+			background: #f0f0f0;
+		}
+
+		@media only screen and (min-width: 768px) {
+			.ui-autocomplete {
+				top: 113px !important;
+				bottom: auto !important;
+				left: 19px !important;
+				width: 221px !important;
+				max-height: 80% !important;
+			}
+		}
+
+		@media only screen and (max-width: 767px) {
+			/* 手機版：autocomplete 顯示在搜尋框下方 */
+			ul.ui-autocomplete {
+				top: 100px !important;
+				height: auto !important;
+				max-height: 75% !important;
+				left: 0 !important;
+				width: 100% !important;
+			}
+		}
+
+		/* 搜尋輸入框樣式 */
+		.query-box input.query {
+			display: block;
+			border: 1px solid #ddd;
+			font-size: 1.2em;
+			width: 100%;
+			height: 1.8em;
+			box-sizing: border-box;
+			padding: 4px 8px;
+		}
+
+		.query-box .search-form {
+			width: 100%;
+		}
+
+		/* 隱藏搜尋輸入框的取消按鈕 */
+		::-webkit-search-cancel-button {
+			-webkit-appearance: none;
+		}
+
+		/* 確保主內容區域不會被左側欄遮擋 */
+		#main-content {
+			margin-left: 260px;
+		}
+
+		@media only screen and (max-width: 767px) {
+			#main-content {
+				margin-left: 0; /* 手機版移除左側邊距 */
+			}
 		}
 
 		/* 主字標題樣式 - 基於原專案 */
