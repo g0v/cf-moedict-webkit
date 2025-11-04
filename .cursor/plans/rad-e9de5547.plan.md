@@ -10,4 +10,4 @@
 ## 待辦清單
 
 - todo-radical-tooltip-links: 為部首 bucket 單字加上 tooltip 支援
-- todo-radical-tooltip-style: 調整部首 tooltip 樣式以對齊字典頁
+- todo-radical-tooltip-style: 調整部首 tooltip 樣式以對齊部首頁，用楷書，黑色的字，不要底線
