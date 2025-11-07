@@ -1,0 +1,32 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "cf-moedict-webkit",
+	"main": "src/index.ts",
+	"compatibility_date": "2025-09-17",
+	"observability": {
+		"enabled": true
+	},
+	"r2_buckets": [
+		{
+			"binding": "FONTS",
+			"bucket_name": "<your-fonts-bucket>",
+			"preview_bucket_name": "<your-fonts-bucket-preview>"
+		},
+		{
+			"binding": "ASSETS",
+			"bucket_name": "<your-assets-bucket>",
+			"preview_bucket_name": "<your-assets-bucket-preview>"
+		},
+		{
+			"binding": "DICTIONARY",
+			"bucket_name": "<your-dictionary-bucket>",
+			"preview_bucket_name": "<your-dictionary-bucket-preview>"
+		}
+	],
+	"vars": {
+		"ASSET_BASE_URL": "https://<your-pub-id>.r2.dev",
+		"DICTIONARY_BASE_URL": "https://<your-pub-id>.r2.dev"
+	}
+}
+
+
