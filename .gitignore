@@ -165,6 +165,7 @@ dist
 .env*
 !.env.example
 .wrangler/
+wrangler.jsonc
 
 # large_fonts directory font files
 large_fonts/**/*.ttf
@@ -300,3 +301,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Allow specific font asset path
+!assets/private/var/mobile/Library/Assets/com_apple_MobileAsset_Font/9965d7058b88c289dece8eaaaf085f46bc3c5b87.asset/AssetData/
