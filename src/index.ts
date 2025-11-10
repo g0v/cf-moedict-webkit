@@ -15,6 +15,11 @@ export default {
 		const url = new URL(request.url);
 
 		try {
+			if (url.pathname.startsWith('/_png/')) {
+				url.pathname = url.pathname.replace(/^\/_png/, '');
+			} else if (url.pathname === '/_png') {
+				url.pathname = '/';
+			}
 			// 測試路由 - 字圖生成 prototype
 			if (url.pathname === '/test/prototype.png') {
 				return await handlePrototypeImageGeneration(env);
