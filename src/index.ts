@@ -22,6 +22,12 @@ export default {
 
 			// 路由處理
 			if (url.pathname.endsWith('.json')) {
+
+				// 把開頭是 /_json/ 的 URL 轉換為 /八.json
+				if (url.pathname.startsWith('/_json/')) {
+					url.pathname = url.pathname.replace('/_json/', '/');
+				}
+
 				// 檢查是否為子路由格式 /a/, /t/, /h/, /c/, /raw/, /uni/, /pua/
 				if (url.pathname.match(/^\/(a|t|h|c|raw|uni|pua)\//)) {
 					return await handleSubRouteAPI(url, env);
@@ -99,6 +105,10 @@ export function parseTextFromUrl(pathname: string): { text: string; lang: Dictio
 	// URL 解碼
 	text = decodeURIComponent(text);
 	console.log('🔍 [ParseTextFromUrl] URL 解碼後:', text);
+
+	// 防呆：若上游改寫未生效，移除舊版 /_json/ 前綴
+	text = text.replace(/^_json\//, '');
+	console.log('🔍 [ParseTextFromUrl] 移除 _json 前綴後:', text);
 
 	// 處理特殊重定向
 	if (text.match(/^[~:!]?=\*/)) {
