@@ -101,6 +101,12 @@ export function parseTextFromUrl(pathname: string): { text: string; lang: Dictio
 	text = text.replace(/^\//, '');
 	console.log('🔍 [ParseTextFromUrl] 移除開頭斜線後:', text);
 
+	// 防呆：若上游未改寫 /_json/ 前綴，這裡統一去除
+	if (text.startsWith('_json/')) {
+		text = text.substring('_json/'.length);
+		console.log('🔍 [ParseTextFromUrl] 移除 _json 前綴後:', text);
+	}
+
 	// URL 解碼
 	text = decodeURIComponent(text);
 	console.log('🔍 [ParseTextFromUrl] URL 解碼後:', text);
